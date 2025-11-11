@@ -32,26 +32,12 @@ export function FcraCompliancePage() {
   const loadDonations = async () => {
     try {
       const response = await api.getDonations();
-      const fcraDonations = response.results || response;
+      const fcraDonations = response.results || [];
       
-      // Also get regular donations from DashboardContext if available
-      const regularDonations = JSON.parse(localStorage.getItem('donations') || '[]');
-      
-      // Combine both types of donations
-      const allDonations = [...fcraDonations, ...regularDonations.map((d: any) => ({
-        ...d,
-        donorName: d.donor,
-        isForeign: false,
-        convertedAmount: d.amount,
-        currency: 'INR',
-        conversionRate: 1,
-        createdAt: d.date,
-        purposeTag: d.project
-      }))].filter((d, index, arr) => arr.findIndex(item => item.id === d.id) === index);
-      
-      setDonations(allDonations);
+      setDonations(fcraDonations);
     } catch (error) {
       console.error('Failed to load donations:', error);
+      setDonations([]);
     }
   };
 
@@ -217,7 +203,7 @@ export function FcraCompliancePage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
-                      {donation.donorCountry || (donation.isForeign ? 'Unknown' : 'India')}
+                      {donation.donorCountry || 'Unknown'}
                       {donation.isForeign && (
                         <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           Foreign

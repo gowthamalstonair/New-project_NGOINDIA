@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS csr_projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    budget DECIMAL(15,2) NOT NULL,
+    duration VARCHAR(50) NOT NULL,
+    beneficiaries INT NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    sdg_goals TEXT,
+    expected_outcomes TEXT,
+    status ENUM('open', 'funded', 'active', 'completed') DEFAULT 'open',
+    funding_received DECIMAL(15,2) DEFAULT 0,
+    fund_utilized DECIMAL(15,2) DEFAULT 0,
+    partner_id VARCHAR(50),
+    partner_name VARCHAR(255),
+    progress INT DEFAULT 0,
+    created_date DATE NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

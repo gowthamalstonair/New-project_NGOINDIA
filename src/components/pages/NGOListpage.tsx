@@ -64,11 +64,11 @@ export function NGOListPage() {
               onClick={() => goToDetails(ngo.id)}
             >
               {/* NGO Logo */}
-              <div className="flex flex-col items-center mb-6">
+              <div className="mb-6">
                 <img 
                   src={ngo.logo || "https://via.placeholder.com/200x200?text=NGO"} 
                   alt={ngo.name} 
-                  className="w-40 h-40 rounded-lg border-2 border-orange-500 mb-4 shadow-md object-cover"
+                  className="w-full h-48 rounded-lg mb-4 object-cover"
                 />
                 <h2 className="text-2xl font-semibold text-gray-900 group-hover:text-orange-600 transition text-center">
                   {ngo.name}

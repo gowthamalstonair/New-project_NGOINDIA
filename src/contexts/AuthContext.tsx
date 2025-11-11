@@ -155,6 +155,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
+      // Try backend authentication first
+      try {
+        const response = await fetch('http://localhost/NGO-India/backend/simple_login.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+            role: selectedRole
+          })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          console.log('Backend authentication successful');
+        } else {
+          console.log('Backend authentication failed:', result.message);
+        }
+      } catch (backendError) {
+        console.error('Backend authentication error:', backendError);
+      }
+      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       

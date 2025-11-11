@@ -103,20 +103,81 @@ export function Settings() {
     profileImage: user?.profileImage || ''
   });
 
-  // Sync profileData with user changes
+  // Load profile and security data from backend and sync with user changes
   React.useEffect(() => {
-    if (user) {
-      setProfileData(prev => ({
-        ...prev,
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        address: user.address || '',
-        organization: user.organization || '',
-        position: user.position || '',
-        profileImage: user.profileImage || ''
-      }));
-    }
+    const loadProfileData = async () => {
+      if (user?.id) {
+        try {
+          const response = await fetch(`http://localhost/NGO-India/backend/get_profile_settings.php?user_id=${user.id}`);
+          const result = await response.json();
+          
+          if (result.success && result.profile) {
+            const profile = result.profile;
+            setProfileData({
+              name: profile.name || user.name || '',
+              email: profile.email || user.email || '',
+              phone: profile.phone || user.phone || '',
+              address: profile.address || user.address || '',
+              organization: profile.organization || user.organization || '',
+              position: profile.position || user.position || '',
+              bio: profile.bio || '',
+              website: profile.website || '',
+              linkedin: profile.linkedin || '',
+              twitter: profile.twitter || '',
+              profileImage: profile.profile_image || user.profileImage || ''
+            });
+          } else {
+            // Use user data if no profile settings found
+            setProfileData(prev => ({
+              ...prev,
+              name: user.name || '',
+              email: user.email || '',
+              phone: user.phone || '',
+              address: user.address || '',
+              organization: user.organization || '',
+              position: user.position || '',
+              profileImage: user.profileImage || ''
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading profile data:', error);
+          // Fallback to user data
+          setProfileData(prev => ({
+            ...prev,
+            name: user.name || '',
+            email: user.email || '',
+            phone: user.phone || '',
+            address: user.address || '',
+            organization: user.organization || '',
+            position: user.position || '',
+            profileImage: user.profileImage || ''
+          }));
+        }
+      }
+    };
+    
+    const loadSecurityData = async () => {
+      if (user?.id) {
+        try {
+          const response = await fetch(`http://localhost/NGO-India/backend/get_settings_password.php?user_id=${user.id}`);
+          const result = await response.json();
+          
+          if (result.success && result.settings) {
+            const settings = result.settings;
+            setSecurityData(prev => ({
+              ...prev,
+              twoFactor: settings.two_factor_enabled || false,
+              backupCodes: settings.backup_codes || ['x1y2z3', 'a4b5c6', 'd7e8f9']
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading security data:', error);
+        }
+      }
+    };
+    
+    loadProfileData();
+    loadSecurityData();
   }, [user]);
 
   const [securityData, setSecurityData] = useState<SecurityData>({
@@ -269,24 +330,57 @@ export function Settings() {
 
     const handleProfileSave = async () => {
       setIsSaving(true);
-      // Update the main profile data state
-      setProfileData(localProfileData);
       
-      // Update the auth context user data
-      updateUser({
-        name: localProfileData.name,
-        email: localProfileData.email,
-        phone: localProfileData.phone,
-        address: localProfileData.address,
-        organization: localProfileData.organization,
-        position: localProfileData.position,
-        profileImage: localProfileData.profileImage
-      });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsSaving(false);
-      console.log('Profile saved');
+      try {
+        // Save to backend
+        const response = await fetch('http://localhost/NGO-India/backend/add_profile_settings.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user?.id || '1',
+            name: localProfileData.name,
+            email: localProfileData.email,
+            phone: localProfileData.phone,
+            address: localProfileData.address,
+            organization: localProfileData.organization,
+            position: localProfileData.position,
+            bio: localProfileData.bio,
+            website: localProfileData.website,
+            linkedin: localProfileData.linkedin,
+            twitter: localProfileData.twitter,
+            profile_image: localProfileData.profileImage
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Update the main profile data state
+          setProfileData(localProfileData);
+          
+          // Update the auth context user data
+          updateUser({
+            name: localProfileData.name,
+            email: localProfileData.email,
+            phone: localProfileData.phone,
+            address: localProfileData.address,
+            organization: localProfileData.organization,
+            position: localProfileData.position,
+            profileImage: localProfileData.profileImage
+          });
+          
+          alert('Profile saved successfully!');
+        } else {
+          alert('Error: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error saving profile:', error);
+        alert('Failed to save profile. Please check your connection.');
+      } finally {
+        setIsSaving(false);
+      }
     };
 
     return (
@@ -505,23 +599,53 @@ export function Settings() {
         return;
       }
       
+      if (!localSecurityData.currentPassword || !localSecurityData.newPassword) {
+        alert('Please fill in all password fields');
+        return;
+      }
+      
       setIsSaving(true);
-      // Update the main security data state
-      setSecurityData(localSecurityData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsSaving(false);
-      
-      // Clear password fields after successful change
-      setLocalSecurityData({
-        ...localSecurityData,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      
-      console.log('Password changed successfully');
+      try {
+        // Save to backend
+        const response = await fetch('http://localhost/NGO-India/backend/add_settings_password.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: user?.id || '1',
+            current_password: localSecurityData.currentPassword,
+            new_password: localSecurityData.newPassword,
+            two_factor_enabled: localSecurityData.twoFactor,
+            backup_codes: localSecurityData.backupCodes
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Update the main security data state
+          setSecurityData(localSecurityData);
+          
+          // Clear password fields after successful change
+          setLocalSecurityData({
+            ...localSecurityData,
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          });
+          
+          alert('Password updated successfully!');
+        } else {
+          alert('Error: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error updating password:', error);
+        alert('Failed to update password. Please check your connection.');
+      } finally {
+        setIsSaving(false);
+      }
     };
 
     return (

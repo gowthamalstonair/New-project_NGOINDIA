@@ -32,6 +32,8 @@ export function LoginForm() {
     setPassword(demoPassword);
   };
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -120,8 +122,7 @@ export function LoginForm() {
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">{account.name}</div>
-                      <div className="text-sm text-gray-500">{account.email}</div>
-                      <div className="text-xs text-gray-400">Password: ngoindia123</div>
+                      <div className="text-xs text-gray-400">Click to login</div>
                     </div>
                   </div>
                 </button>

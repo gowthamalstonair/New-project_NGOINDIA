@@ -13,6 +13,29 @@ export function ProjectMonitoring() {
   const { projects, tasks, updateTask } = useDashboard();
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [dbProjects, setDbProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_projects_api.php');
+      const result = await response.json();
+      if (result.success) {
+        setDbProjects(result.projects);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Combine context projects with database projects
+  const allProjects = [...projects, ...dbProjects];
 
   // Quick Actions handlers
   const handleGenerateReport = () => {
@@ -283,19 +306,19 @@ export function ProjectMonitoring() {
   const stats = [
     {
       label: 'Active Projects',
-      value: formatNumber(projects.filter((p: any) => p.status === 'active').length),
+      value: formatNumber(allProjects.filter((p: any) => p.status === 'active').length),
       icon: FolderOpen,
       color: 'text-blue-600'
     },
     {
       label: 'Total Budget',
-      value: `₹${formatNumber(projects.reduce((sum: number, p: any) => sum + p.budget, 0))}`,
+      value: `₹${formatNumber(allProjects.reduce((sum: number, p: any) => sum + (p.budget || 0), 0))}`,
       icon: Target,
       color: 'text-green-600'
     },
     {
       label: 'Avg. Progress',
-      value: `${Math.round(projects.reduce((sum: number, p: any) => sum + p.progress, 0) / projects.length)}%`,
+      value: `${allProjects.length > 0 ? Math.round(allProjects.reduce((sum: number, p: any) => sum + (p.progress || 0), 0) / allProjects.length) : 0}%`,
       icon: TrendingUp,
       color: 'text-orange-600'
     }
@@ -385,7 +408,7 @@ export function ProjectMonitoring() {
             </div>
             <div className="p-6">
               <div className="space-y-6">
-                {projects.map((project) => (
+                {allProjects.map((project) => (
                   <div 
                     key={project.id} 
                     className={`border rounded-lg p-6 cursor-pointer transition-all ${

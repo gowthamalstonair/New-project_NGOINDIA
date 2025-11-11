@@ -62,68 +62,99 @@ export function BeneficiaryImpactTracking() {
     remarks: ''
   });
 
-  // Load sample data on component mount
+  // Load records from database
   useEffect(() => {
-    const sampleRecords: BeneficiaryImpactRecord[] = [
-      {
-        id: '1',
-        beneficiaryName: 'Arjun Mehta',
-        projectName: 'Education for All',
-        indicatorName: 'Literacy Level',
-        baselineValue: 30,
-        currentValue: 85,
-        measurementDate: '2024-01-15',
-        remarks: 'Significant improvement in reading and writing skills',
-        createdAt: '2024-01-01'
-      },
-      {
-        id: '2',
-        beneficiaryName: 'Kavya Reddy',
-        projectName: 'Healthcare Access Program',
-        indicatorName: 'Health Score',
-        baselineValue: 45,
-        currentValue: 78,
-        measurementDate: '2024-01-20',
-        remarks: 'Regular health checkups showing positive results',
-        createdAt: '2024-01-05'
-      },
-      {
-        id: '3',
-        beneficiaryName: 'Meera Gupta',
-        projectName: 'Women Empowerment',
-        indicatorName: 'Income Level (₹/month)',
-        baselineValue: 2000,
-        currentValue: 8500,
-        measurementDate: '2024-01-25',
-        remarks: 'Started small business with micro-finance support',
-        createdAt: '2024-01-10'
-      }
-    ];
-    setRecords(sampleRecords);
+    fetchRecords();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchRecords = async () => {
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_impact_records_api.php');
+      const result = await response.json();
+      if (result.success) {
+        const formattedRecords = result.records.map((record: any) => ({
+          id: record.id.toString(),
+          beneficiaryName: record.beneficiary_name,
+          projectName: record.project_name,
+          indicatorName: record.indicator_name,
+          baselineValue: parseFloat(record.baseline_value),
+          currentValue: parseFloat(record.current_value),
+          measurementDate: record.measurement_date,
+          remarks: record.remarks || '',
+          createdAt: record.created_at
+        }));
+        setRecords(formattedRecords);
+      }
+    } catch (error) {
+      console.error('Error fetching records:', error);
+      // Fallback to sample data
+      const sampleRecords: BeneficiaryImpactRecord[] = [
+        {
+          id: '1',
+          beneficiaryName: 'Arjun Mehta',
+          projectName: 'Education for All',
+          indicatorName: 'Literacy Level',
+          baselineValue: 30,
+          currentValue: 85,
+          measurementDate: '2024-01-15',
+          remarks: 'Significant improvement in reading and writing skills',
+          createdAt: '2024-01-01'
+        }
+      ];
+      setRecords(sampleRecords);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newRecord: BeneficiaryImpactRecord = {
-      id: editingRecord ? editingRecord.id : Date.now().toString(),
-      beneficiaryName: formData.beneficiaryName,
-      projectName: formData.projectName,
-      indicatorName: formData.indicatorName,
-      baselineValue: parseFloat(formData.baselineValue),
-      currentValue: parseFloat(formData.currentValue),
-      measurementDate: formData.measurementDate,
-      remarks: formData.remarks,
-      createdAt: editingRecord ? editingRecord.createdAt : new Date().toISOString()
-    };
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/add_impact_record_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          beneficiaryName: formData.beneficiaryName,
+          projectName: formData.projectName,
+          indicatorName: formData.indicatorName,
+          baselineValue: parseFloat(formData.baselineValue),
+          currentValue: parseFloat(formData.currentValue),
+          measurementDate: formData.measurementDate,
+          remarks: formData.remarks
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        alert('Impact record added successfully!');
+        fetchRecords(); // Refresh the records
+        resetForm();
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error saving record:', error);
+      // Fallback to local storage
+      const newRecord: BeneficiaryImpactRecord = {
+        id: editingRecord ? editingRecord.id : Date.now().toString(),
+        beneficiaryName: formData.beneficiaryName,
+        projectName: formData.projectName,
+        indicatorName: formData.indicatorName,
+        baselineValue: parseFloat(formData.baselineValue),
+        currentValue: parseFloat(formData.currentValue),
+        measurementDate: formData.measurementDate,
+        remarks: formData.remarks,
+        createdAt: editingRecord ? editingRecord.createdAt : new Date().toISOString()
+      };
 
-    if (editingRecord) {
-      setRecords(records.map(r => r.id === editingRecord.id ? newRecord : r));
-    } else {
-      setRecords([...records, newRecord]);
+      if (editingRecord) {
+        setRecords(records.map(r => r.id === editingRecord.id ? newRecord : r));
+      } else {
+        setRecords([...records, newRecord]);
+      }
+      resetForm();
     }
-
-    resetForm();
   };
 
   const resetForm = () => {

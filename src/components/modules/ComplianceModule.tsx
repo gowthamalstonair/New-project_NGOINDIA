@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Shield, Users, FileText, Eye, Download, Upload, 
   CheckCircle, AlertTriangle, Calendar, IndianRupee,
@@ -83,9 +83,59 @@ interface LegalRequirement {
   impact: 'High' | 'Medium' | 'Low';
 }
 
+interface DBPolicy {
+  id: string;
+  policy_name: string;
+  policy_type: string;
+  version?: string;
+  status: string;
+  upload_date?: string;
+  expiry_date?: string;
+  uploaded_by?: string;
+  description?: string;
+}
+
 export function ComplianceModule() {
   const [activeTab, setActiveTab] = useState('tracking');
   const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
+
+  // Load policies from database on component mount
+  useEffect(() => {
+    loadPoliciesFromDB();
+  }, []);
+
+  const loadPoliciesFromDB = async () => {
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_legal_policies.php');
+      const data = await response.json();
+      if (data.success && data.policies && data.policies.length > 0) {
+        const dbPolicies = data.policies.map((dbPolicy: DBPolicy) => ({
+          id: `db_${dbPolicy.id}`,
+          title: dbPolicy.policy_name,
+          category: dbPolicy.policy_type,
+          version: dbPolicy.version || 'v1.0',
+          status: dbPolicy.status === 'Active' ? 'published' : 'draft',
+          visibility: 'internal',
+          createdDate: dbPolicy.upload_date ? dbPolicy.upload_date.split(' ')[0] : new Date().toISOString().split('T')[0],
+          lastReviewed: dbPolicy.upload_date ? dbPolicy.upload_date.split(' ')[0] : new Date().toISOString().split('T')[0],
+          nextReview: dbPolicy.expiry_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          approvedBy: dbPolicy.uploaded_by,
+          description: dbPolicy.description || 'Policy uploaded from database',
+          acknowledgments: []
+        }));
+        
+        // Only add database policies that don't already exist
+        setPolicies(prev => {
+          const existingTitles = prev.map(p => p.title);
+          const newDbPolicies = dbPolicies.filter((dbPolicy: Policy) => !existingTitles.includes(dbPolicy.title));
+          return [...prev, ...newDbPolicies];
+        });
+      }
+    } catch (error) {
+      console.error('Error loading policies:', error);
+      // Don't modify policies state if there's an error
+    }
+  };
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [hoveredSegment, setHoveredSegment] = useState<any>(null);
@@ -574,7 +624,8 @@ export function ComplianceModule() {
     }
   ]);
 
-  const [policies, setPolicies] = useState<Policy[]>([
+  // Initialize policies with the required 5 policies
+  const initialPolicies: Policy[] = [
     {
       id: '1',
       title: 'Anti-Corruption Policy',
@@ -645,7 +696,9 @@ export function ComplianceModule() {
       description: 'How we collect, use, and protect personal data of beneficiaries and donors.',
       acknowledgments: ['emp001', 'emp002', 'emp003', 'emp004', 'emp005']
     }
-  ]);
+  ];
+
+  const [policies, setPolicies] = useState<Policy[]>(initialPolicies);
 
   const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
   const totalUsed = donations.reduce((sum, d) => sum + d.used, 0);
@@ -1410,10 +1463,10 @@ Phone: +91 98765 43210`;
 
   const [vaultUploadData, setVaultUploadData] = useState({
     name: '',
-    type: 'PDF',
-    description: '',
     file: null as File | null
   });
+
+
 
   const [policyUploadData, setPolicyUploadData] = useState({
     title: '',
@@ -1430,12 +1483,12 @@ Phone: +91 98765 43210`;
 
   const handleVaultUpload = () => {
     if (!vaultUploadData.name || !vaultUploadData.file) {
-      alert('Please fill all fields and select a file');
+      alert('Please enter document name and select a file');
       return;
     }
 
     alert(`Document uploaded successfully!`);
-    setVaultUploadData({ name: '', type: 'PDF', description: '', file: null });
+    setVaultUploadData({ name: '', file: null });
     setShowUploadModal(false);
   };
 
@@ -1471,28 +1524,63 @@ Phone: +91 98765 43210`;
 
     const finalCategory = policyUploadData.category === 'Others' ? policyUploadData.customCategory : policyUploadData.category;
     
-    const fileContent = await extractFileContent(policyUploadData.file);
+    try {
+      // Save to database
+      const policyData = {
+        policy_name: policyUploadData.title,
+        policy_type: finalCategory,
+        description: policyUploadData.description,
+        file_name: policyUploadData.file.name,
+        file_path: `/uploads/policies/${policyUploadData.file.name}`,
+        file_size: policyUploadData.file.size,
+        uploaded_by: 'Current User',
+        effective_date: new Date().toISOString().split('T')[0],
+        status: 'Active',
+        version: 'v1.0',
+        department: finalCategory
+      };
+      
+      const response = await fetch('http://localhost/NGO-India/backend/add_legal_policy.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(policyData)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Also add to frontend state
+        const fileContent = await extractFileContent(policyUploadData.file);
+        
+        const newPolicy: Policy = {
+          id: `db_${result.id}`,
+          title: policyUploadData.title,
+          category: finalCategory as Policy['category'],
+          version: 'v1.0',
+          status: 'published',
+          visibility: policyUploadData.visibility,
+          createdDate: new Date().toISOString().split('T')[0],
+          lastReviewed: new Date().toISOString().split('T')[0],
+          nextReview: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          description: policyUploadData.description,
+          file: policyUploadData.file,
+          fileContent: fileContent,
+          acknowledgments: []
+        };
 
-    const newPolicy: Policy = {
-      id: (policies.length + 1).toString(),
-      title: policyUploadData.title,
-      category: finalCategory as Policy['category'],
-      version: 'v1.0',
-      status: 'published',
-      visibility: policyUploadData.visibility,
-      createdDate: new Date().toISOString().split('T')[0],
-      lastReviewed: new Date().toISOString().split('T')[0],
-      nextReview: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      description: policyUploadData.description,
-      file: policyUploadData.file,
-      fileContent: fileContent,
-      acknowledgments: []
-    };
-
-    setPolicies(prev => [...prev, newPolicy]);
-    setPolicyUploadData({ title: '', category: 'HR', customCategory: '', visibility: 'internal', description: '', file: null });
-    setShowPolicyUpload(false);
-    alert('Policy uploaded successfully!');
+        setPolicies(prev => [newPolicy, ...prev]);
+        setPolicyUploadData({ title: '', category: 'HR', customCategory: '', visibility: 'internal', description: '', file: null });
+        setShowPolicyUpload(false);
+        alert('Policy uploaded successfully!');
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error uploading policy:', error);
+      alert('Failed to upload policy. Please check your connection.');
+    }
   };
 
   const handlePolicyStatusChange = (policyId: string, newStatus: Policy['status']) => {
@@ -2067,11 +2155,13 @@ For detailed content, please contact the administration.`;
 
 
   const UploadModal = () => {
+    const [localUploadData, setLocalUploadData] = useState(vaultUploadData);
+    
     if (!showUploadModal) return null;
     
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Upload Document</h3>
             <button onClick={() => setShowUploadModal(false)} className="text-gray-400 hover:text-gray-600">
@@ -2079,14 +2169,14 @@ For detailed content, please contact the administration.`;
             </button>
           </div>
           
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-120px)]">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Document Name</label>
               <input 
-                type="text" 
-                value={vaultUploadData.name}
-                onChange={(e) => setVaultUploadData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                type="text"
+                value={localUploadData.name}
+                onChange={(e) => setLocalUploadData(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 placeholder="Enter document name"
               />
             </div>
@@ -2096,17 +2186,17 @@ For detailed content, please contact the administration.`;
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-400 transition-colors">
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-600 mb-2">
-                  {vaultUploadData.file ? vaultUploadData.file.name : 'Click to upload or drag and drop'}
+                  {localUploadData.file ? localUploadData.file.name : 'Click to upload or drag and drop'}
                 </p>
-                <p className="text-xs text-gray-500">PDF, DOC, DOCX up to 10MB</p>
+                <p className="text-xs text-gray-500">PDF, DOC, DOCX, JPG, PNG up to 10MB</p>
                 <input 
                   type="file" 
                   className="hidden" 
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      setVaultUploadData(prev => ({ ...prev, file }));
+                      setLocalUploadData(prev => ({ ...prev, file }));
                     }
                   }}
                   id="vault-file-upload"
@@ -2120,24 +2210,38 @@ For detailed content, please contact the administration.`;
                 </button>
               </div>
             </div>
-            
-            <div className="flex gap-3">
-              <button 
-                onClick={() => {
-                  setShowUploadModal(false);
-                  setVaultUploadData({ name: '', type: 'PDF', description: '', file: null });
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleVaultUpload}
-                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
-              >
-                Upload
-              </button>
-            </div>
+          </div>
+          
+          <div className="flex gap-3 p-6 border-t border-gray-200 bg-white sticky bottom-0 z-10">
+            <button 
+              onClick={() => {
+                setShowUploadModal(false);
+                setVaultUploadData({ name: '', file: null });
+                setLocalUploadData({ name: '', file: null });
+              }}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-100 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={() => {
+                if (!localUploadData.name || !localUploadData.file) {
+                  alert('Please enter document name and select a file');
+                  return;
+                }
+                
+                setVaultUploadData(localUploadData);
+                const formData = new FormData();
+                formData.append('document', localUploadData.file);
+                formData.append('name', localUploadData.name);
+                formData.append('uploaded_by', 'Admin');
+                
+                handleComplianceUpload(formData);
+              }}
+              className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+            >
+              Upload
+            </button>
           </div>
         </div>
       </div>
@@ -2665,6 +2769,80 @@ For detailed content, please contact the administration.`;
     );
   };
 
+  const [complianceDocuments, setComplianceDocuments] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [docFilter, setDocFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [showComplianceUpload, setShowComplianceUpload] = useState(false);
+  const [complianceUploadData, setComplianceUploadData] = useState({
+    name: '',
+    documentType: 'Legal Policy',
+    category: 'FCRA',
+    description: '',
+    expiryDate: '',
+    file: null as File | null
+  });
+
+  const loadComplianceDocuments = async () => {
+    try {
+      setLoadingDocs(true);
+      const params = new URLSearchParams();
+      if (docFilter) params.append('category', docFilter);
+      if (statusFilter) params.append('status', statusFilter);
+      
+      const response = await fetch(`http://localhost/NGO-India/backend/get_compliancedocuments_api.php?${params}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setComplianceDocuments(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to load compliance documents:', error);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  useEffect(() => {
+    loadComplianceDocuments();
+  }, [docFilter, statusFilter]);
+
+  const handleComplianceUpload = async (formData: FormData) => {
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/add_compliancedocument_api.php', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setShowUploadModal(false);
+        loadComplianceDocuments();
+        alert('Document uploaded successfully!');
+      } else {
+        alert('Upload failed: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Upload failed. Please try again.');
+    }
+  };
+
+  const getStatusColor = (status: string, expiryStatus: string) => {
+    if (expiryStatus === 'Expired') return 'bg-red-100 text-red-800';
+    if (expiryStatus === 'Expiring Soon') return 'bg-yellow-100 text-yellow-800';
+    if (status === 'Active') return 'bg-green-100 text-green-800';
+    return 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusIcon = (status: string, expiryStatus: string) => {
+    if (expiryStatus === 'Expired') return <AlertTriangle className="w-4 h-4" />;
+    if (expiryStatus === 'Expiring Soon') return <AlertTriangle className="w-4 h-4" />;
+    if (status === 'Active') return <CheckCircle className="w-4 h-4" />;
+    return <FileText className="w-4 h-4" />;
+  };
+
   const renderDigitalVault = () => (
     <div className="space-y-6">
       {/* Header */}
@@ -2673,7 +2851,7 @@ For detailed content, please contact the administration.`;
           <FolderOpen className="w-8 h-8 text-blue-600" />
           <div>
             <h2 className="text-xl font-bold text-gray-900">Digital Vault</h2>
-            <p className="text-gray-600">Secure document storage and government integration</p>
+            <p className="text-gray-600">Secure document storage and compliance management</p>
           </div>
         </div>
         <div className="bg-white/60 rounded-lg p-4 mt-4">
@@ -2683,6 +2861,8 @@ For detailed content, please contact the administration.`;
           </p>
         </div>
       </div>
+
+
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
@@ -2696,58 +2876,116 @@ For detailed content, please contact the administration.`;
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {digitalVaultDocs.map((doc, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <FileText className="w-5 h-5 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-1">{doc.name}</h4>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span>{doc.type}</span>
-                    <span>•</span>
-                    <span>{doc.size}</span>
+        {loadingDocs ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+            <p className="text-gray-600 mt-4">Loading documents...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Existing Digital Vault Documents */}
+            {digitalVaultDocs.map((doc, index) => (
+              <div key={`existing-${index}`} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <FileText className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 mb-1">{doc.name}</h4>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span>{doc.type}</span>
+                      <span>•</span>
+                      <span>{doc.size}</span>
+                    </div>
+                  </div>
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                    doc.shared ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {doc.shared ? <CheckCircle className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
+                    {doc.shared ? 'Shared with Gov' : 'Private'}
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-gray-600">Uploaded: {doc.date}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => alert(`Document Preview:\n\nName: ${doc.name}\nType: ${doc.type}\nSize: ${doc.size}\nUploaded: ${doc.date}\nStatus: ${doc.shared ? 'Shared with government authorities' : 'Private document'}`)}
+                    className="flex-1 px-3 py-2 text-sm text-orange-600 hover:text-orange-700 transition-colors border border-orange-200 rounded-lg hover:bg-orange-50"
+                  >
+                    <Eye className="w-4 h-4 inline mr-1" />
+                    View
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(`Document: ${doc.name}\nType: ${doc.type}\nSize: ${doc.size}\nUploaded: ${doc.date}\nShared: ${doc.shared ? 'Yes' : 'No'}`);
+                      link.download = doc.name.toLowerCase().replace(/\s+/g, '-') + '.txt';
+                      link.click();
+                    }}
+                    className="flex-1 px-3 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    <Download className="w-4 h-4 inline mr-1" />
+                    Download
+                  </button>
+                </div>
               </div>
+            ))}
+            
+            {/* New Compliance Documents */}
+            {complianceDocuments.map((doc: any) => (
+              <div key={`compliance-${doc.id}`} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <FileText className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 mb-1">{doc.name}</h4>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span>{doc.type}</span>
+                      <span>•</span>
+                      <span>{doc.file_size}</span>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm text-gray-600">Uploaded: {doc.date}</span>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  doc.shared ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {doc.shared ? 'Shared with Gov' : 'Private'}
-                </span>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{doc.description}</p>
+
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-gray-600">Uploaded: {new Date(doc.upload_date).toLocaleDateString()}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button className="flex-1 px-3 py-2 text-sm text-orange-600 hover:text-orange-700 transition-colors border border-orange-200 rounded-lg hover:bg-orange-50">
+                    <Eye className="w-4 h-4 inline mr-1" />
+                    View
+                  </button>
+                  <button className="flex-1 px-3 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                    <Download className="w-4 h-4 inline mr-1" />
+                    Download
+                  </button>
+                </div>
               </div>
+            ))}
+          </div>
+        )}
 
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => alert(`Document Preview:\n\nName: ${doc.name}\nType: ${doc.type}\nSize: ${doc.size}\nUploaded: ${doc.date}\nStatus: ${doc.shared ? 'Shared with government authorities' : 'Private document'}`)}
-                  className="flex-1 px-3 py-2 text-sm text-orange-600 hover:text-orange-700 transition-colors border border-orange-200 rounded-lg hover:bg-orange-50"
-                >
-                  <Eye className="w-4 h-4 inline mr-1" />
-                  View
-                </button>
-                <button 
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(`Document: ${doc.name}\nType: ${doc.type}\nSize: ${doc.size}\nUploaded: ${doc.date}\nShared: ${doc.shared ? 'Yes' : 'No'}`);
-                    link.download = doc.name.toLowerCase().replace(/\s+/g, '-') + '.txt';
-                    link.click();
-                  }}
-                  className="flex-1 px-3 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                >
-                  <Download className="w-4 h-4 inline mr-1" />
-                  Download
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-
+        {digitalVaultDocs.length === 0 && complianceDocuments.length === 0 && !loadingDocs && (
+          <div className="text-center py-12">
+            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
+            <p className="text-gray-600 mb-6">Upload your first compliance document to get started.</p>
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-2 mx-auto"
+            >
+              <Plus className="w-5 h-5" />
+              Upload Document
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -26,10 +26,41 @@ export function JoinNetwork() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Save to localStorage for now (you can integrate with context later)
+    try {
+      // Try to save to backend first
+      const response = await fetch('http://localhost/NGO-India/backend/add_network_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.ngoName,
+          email: formData.email,
+          phone: formData.phone,
+          location: formData.location,
+          focus_area: formData.focusArea,
+          description: formData.description,
+          website: formData.website,
+          members: parseInt(formData.members) || 100,
+          projects: parseInt(formData.projects) || 5,
+          logo: formData.logo
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        alert('Successfully joined the network and saved to database!');
+      } else {
+        console.log('Backend failed, using local storage:', result.message);
+      }
+    } catch (error) {
+      console.error('Backend error, using local storage:', error);
+    }
+    
+    // Always save to localStorage as fallback
     const existingNetworks = JSON.parse(localStorage.getItem('partnerNGOs') || '[]');
     const newNetwork = {
       id: Date.now().toString(),

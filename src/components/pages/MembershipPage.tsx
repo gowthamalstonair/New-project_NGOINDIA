@@ -191,28 +191,28 @@ export function MembershipPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-orange-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Users className="w-8 h-8 text-orange-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+              <img src="https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Community Access" className="w-full h-48 object-cover" />
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Community Access</h3>
+                <p className="text-gray-700">Connect with like-minded individuals and participate in exclusive member events and activities.</p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Community Access</h3>
-              <p className="text-gray-600">Connect with like-minded individuals and participate in exclusive member events and activities.</p>
             </div>
             
-            <div className="text-center">
-              <div className="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Shield className="w-8 h-8 text-blue-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+              <img src="https://images.pexels.com/photos/590041/pexels-photo-590041.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Impact Transparency" className="w-full h-48 object-cover" />
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Impact Transparency</h3>
+                <p className="text-gray-700">Receive detailed reports on how your contributions are making a difference in communities.</p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Impact Transparency</h3>
-              <p className="text-gray-600">Receive detailed reports on how your contributions are making a difference in communities.</p>
             </div>
             
-            <div className="text-center">
-              <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Award className="w-8 h-8 text-green-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+              <img src="https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Recognition & Rewards" className="w-full h-48 object-cover" />
+              <div className="p-6 text-center">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Recognition & Rewards</h3>
+                <p className="text-gray-700">Get recognized for your contributions and receive exclusive member rewards and certificates.</p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Recognition & Rewards</h3>
-              <p className="text-gray-600">Get recognized for your contributions and receive exclusive member rewards and certificates.</p>
             </div>
           </div>
         </div>

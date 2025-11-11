@@ -110,46 +110,35 @@ export function CreateCampaignPage() {
 
     setIsSubmitting(true);
     try {
-      // Import the campaign data management
-      const { addCampaign } = await import('../../utils/campaignData');
+      // Save campaign to backend
+      const response = await fetch('http://localhost/NGO-India/backend/add_campaign_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          fullStory: formData.fullStory,
+          goal: Number(formData.goal),
+          category: formData.category,
+          endDate: formData.endDate,
+          organizerName: formData.organizerName,
+          organizerEmail: formData.organizerEmail,
+          organizerPhone: formData.organizerPhone
+        })
+      });
       
-      // Calculate days left
-      const endDate = new Date(formData.endDate);
-      const today = new Date();
-      const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // Create new campaign with default image based on category
-      const categoryImages: Record<string, string> = {
-        education: 'https://images.pexels.com/photos/1720186/pexels-photo-1720186.jpeg',
-        healthcare: 'https://images.pexels.com/photos/263402/pexels-photo-263402.jpeg',
-        water: 'https://images.pexels.com/photos/416528/pexels-photo-416528.jpeg',
-        food: 'https://images.pexels.com/photos/6995247/pexels-photo-6995247.jpeg',
-        skills: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg',
-        empowerment: 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg',
-        environment: 'https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg',
-        emergency: 'https://images.pexels.com/photos/6646917/pexels-photo-6646917.jpeg'
-      };
-      
-      const newCampaign = {
-        title: formData.title,
-        description: formData.description,
-        fullStory: formData.fullStory,
-        goal: Number(formData.goal),
-        category: formData.category,
-        daysLeft: daysLeft,
-        organizerName: formData.organizerName,
-        organizerEmail: formData.organizerEmail,
-        organizerPhone: formData.organizerPhone,
-        image: categoryImages[formData.category] || categoryImages.education
-      };
-      
-      // Add to campaigns list
-      addCampaign(newCampaign);
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create campaign');
+      }
       
       alert('Campaign created successfully! It will be reviewed and published within 24 hours.');
       window.location.href = '/campaigns';
     } catch (error) {
-      alert('Failed to create campaign. Please try again.');
+      console.error('Campaign creation error:', error);
+      alert((error as Error).message || 'Failed to create campaign. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

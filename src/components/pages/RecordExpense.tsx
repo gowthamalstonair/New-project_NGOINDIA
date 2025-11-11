@@ -15,8 +15,39 @@ export function RecordExpense() {
     notes: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    try {
+      // Try to save to backend first
+      const response = await fetch('http://localhost/NGO-India/backend/add_expense_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          description: formData.title,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          vendor: formData.vendor,
+          invoice_number: formData.invoiceNumber,
+          payment_method: formData.paymentMethod,
+          notes: formData.notes,
+          project: 'General'
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        alert('Expense recorded successfully in database!');
+      } else {
+        console.log('Backend failed, using local storage:', result.message);
+      }
+    } catch (error) {
+      console.error('Backend error, using local storage:', error);
+    }
+    
+    // Always add to local context as fallback
     addExpense({
       description: formData.title,
       amount: parseFloat(formData.amount),
@@ -25,6 +56,7 @@ export function RecordExpense() {
       project: 'General',
       status: 'pending'
     });
+    
     alert('Expense recorded successfully!');
     setTimeout(() => {
       localStorage.setItem('activeModule', 'finances');

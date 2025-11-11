@@ -8,6 +8,7 @@ import {
   Zap, HelpCircle, UserCheck, MessageCircle, AlertCircle
 } from 'lucide-react';
 
+
 interface Sector {
   id: string;
   name: string;
@@ -18,6 +19,27 @@ interface Sector {
   color: string;
   icon: React.ComponentType<any>;
 }
+
+interface Reply {
+  id: string;
+  author: string;
+  content: string;
+  timestamp: string;
+  likes: number;
+}
+
+interface Discussion {
+  id: string;
+  title: string;
+  author: string;
+  sector: string;
+  timestamp: string;
+  likes: number;
+  replies: number;
+  isPinned: boolean;
+}
+
+type DiscussionReplies = Record<string, Reply[]>;
 
 const sectors: Sector[] = [
   {
@@ -110,6 +132,48 @@ const initialQuickInteractions = [
   }
 ];
 
+const initialRepliesData: DiscussionReplies = {
+  '1': [
+    {
+      id: 'r1',
+      author: 'Arjun Gupta',
+      content: 'Great topic! We\'ve implemented tablet-based learning in 15 villages. Key challenge is internet connectivity. We use offline content and sync when possible.',
+      timestamp: '1 hour ago',
+      likes: 8
+    },
+    {
+      id: 'r2', 
+      author: 'Meera Singh',
+      content: 'Solar charging stations have been game-changers for us. Students can charge devices and access digital content even in remote areas without electricity.',
+      timestamp: '45 minutes ago',
+      likes: 12
+    },
+    {
+      id: 'r3',
+      author: 'Dr. Amit Patel',
+      content: 'Teacher training is crucial. We conduct monthly workshops on digital pedagogy. Happy to share our curriculum with interested organizations.',
+      timestamp: '30 minutes ago', 
+      likes: 6
+    }
+  ],
+  '2': [
+    {
+      id: 'r4',
+      author: 'Dr. Sunita Rao',
+      content: 'Mobile units are excellent but maintenance costs are high. We partner with local mechanics and train them on medical equipment basics.',
+      timestamp: '2 hours ago',
+      likes: 15
+    },
+    {
+      id: 'r5',
+      author: 'Ankit Verma',
+      content: 'Telemedicine integration has helped us reach specialists. We use WhatsApp for initial consultations and refer serious cases to district hospitals.',
+      timestamp: '1 hour ago',
+      likes: 9
+    }
+  ]
+};
+
 export function SectorNetworks() {
   const [activeView, setActiveView] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,30 +197,112 @@ export function SectorNetworks() {
   const [selectedDiscussion, setSelectedDiscussion] = useState<any>(null);
   const [selectedInteractionDetail, setSelectedInteractionDetail] = useState<any>(null);
 
-  // Load data from localStorage on component mount
+
+  const [discussionReplies, setDiscussionReplies] = useState<DiscussionReplies>(initialRepliesData);
+  const [joinFormData, setJoinFormData] = useState({
+    ngoName: '',
+    email: '',
+    phone: '',
+    location: '',
+    focusArea: '',
+    description: '',
+    website: '',
+    members: 0,
+    projects: 0,
+    role: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [sectorNetworks, setSectorNetworks] = useState<any[]>([]);
+  const [loadingNetworks, setLoadingNetworks] = useState(false);
+  const [dynamicSectors, setDynamicSectors] = useState<any[]>([]);
+  const [loadingSectors, setLoadingSectors] = useState(false);
+
+  // Load data from localStorage and database on component mount
   useEffect(() => {
-    const savedDiscussions = localStorage.getItem('sectorDiscussions');
-    const savedInteractions = localStorage.getItem('quickInteractions');
-    const savedActivities = localStorage.getItem('recentActivities');
-    const savedJoinedSectors = localStorage.getItem('joinedSectors');
+    loadDiscussions();
+    loadOtherData();
+  }, []);
+
+  const loadDiscussions = async () => {
+    // Always start with existing discussions
+    setSectorDiscussions(initialDiscussions);
     
-    if (savedDiscussions) {
-      const parsed = JSON.parse(savedDiscussions);
-      // Merge: keep initial data + add any new items that aren't in initial data
-      const newItems = parsed.filter((item: any) => !initialDiscussions.find(init => init.id === item.id));
-      setSectorDiscussions([...newItems, ...initialDiscussions]);
-    } else {
-      setSectorDiscussions(initialDiscussions);
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_discussions.php');
+      const data = await response.json();
+      if (data.success) {
+        const dbDiscussions = data.discussions.map((d: any) => ({
+          id: `db_${d.id}`,
+          title: d.title,
+          author: d.author,
+          sector: d.sector?.replace(/^0+/, '') || d.sector,
+          timestamp: d.time_ago,
+          likes: d.likes,
+          replies: d.replies,
+          isPinned: d.is_pinned
+        }));
+        setSectorDiscussions([...initialDiscussions, ...dbDiscussions]);
+      }
+    } catch (error) {
+      console.error('Error loading discussions:', error);
     }
-    
-    if (savedInteractions) {
-      const parsed = JSON.parse(savedInteractions);
-      // Merge: keep initial data + add any new items that aren't in initial data
-      const newItems = parsed.filter((item: any) => !initialQuickInteractions.find(init => init.id === item.id));
-      setQuickInteractions([...newItems, ...initialQuickInteractions]);
-    } else {
+  };
+
+  const loadRepliesFromDB = async (discussionId: string) => {
+    try {
+      const response = await fetch(`http://localhost/NGO-India/backend/get_replies.php?discussion_id=${discussionId}`);
+      const data = await response.json();
+      if (data.success) {
+        const dbReplies = data.replies.map((r: any) => ({
+          id: r.id.toString(),
+          author: r.author,
+          content: r.content,
+          timestamp: r.time_ago,
+          likes: r.likes
+        }));
+        
+        setDiscussionReplies(prev => ({
+          ...prev,
+          [`db_${discussionId}`]: dbReplies
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading replies:', error);
+    }
+  };
+
+  const loadOtherData = async () => {
+    // Load quick interactions from database
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_sector_posts.php');
+      const data = await response.json();
+      if (data.success) {
+        const dbPosts = data.posts.map((p: any) => ({
+          id: `db_${p.id}`,
+          title: p.title,
+          author: p.author,
+          sector: p.sector?.replace(/^0+/, '') || p.sector,
+          type: p.type,
+          urgency: p.urgency,
+          timestamp: p.time_ago,
+          responses: p.responses,
+          status: p.status,
+          description: p.description
+        }));
+        
+        // Combine with existing initial data
+        setQuickInteractions([...dbPosts, ...initialQuickInteractions]);
+      } else {
+        setQuickInteractions(initialQuickInteractions);
+      }
+    } catch (error) {
+      console.error('Error loading sector posts:', error);
       setQuickInteractions(initialQuickInteractions);
     }
+    
+    const savedActivities = localStorage.getItem('recentActivities');
+    const savedJoinedSectors = localStorage.getItem('joinedSectors');
     
     if (savedActivities) {
       setRecentActivities(JSON.parse(savedActivities));
@@ -165,7 +311,25 @@ export function SectorNetworks() {
     if (savedJoinedSectors) {
       setJoinedSectors(JSON.parse(savedJoinedSectors));
     }
-  }, []);
+    
+    const savedReplies = localStorage.getItem('discussionReplies');
+    if (savedReplies) {
+      const parsedReplies: DiscussionReplies = JSON.parse(savedReplies);
+      const mergedReplies: DiscussionReplies = { ...initialRepliesData };
+      Object.keys(parsedReplies).forEach(discussionId => {
+        if (mergedReplies[discussionId]) {
+          const existingIds = mergedReplies[discussionId].map((r: Reply) => r.id);
+          const newReplies = parsedReplies[discussionId].filter((r: Reply) => !existingIds.includes(r.id));
+          mergedReplies[discussionId] = [...mergedReplies[discussionId], ...newReplies];
+        } else {
+          mergedReplies[discussionId] = parsedReplies[discussionId];
+        }
+      });
+      setDiscussionReplies(mergedReplies);
+    } else {
+      setDiscussionReplies(initialRepliesData);
+    }
+  };
 
   // Save data to localStorage whenever state changes
   useEffect(() => {
@@ -184,7 +348,63 @@ export function SectorNetworks() {
     localStorage.setItem('joinedSectors', JSON.stringify(joinedSectors));
   }, [joinedSectors]);
 
-  const filteredSectors = sectors.filter(sector =>
+  useEffect(() => {
+    localStorage.setItem('discussionReplies', JSON.stringify(discussionReplies));
+  }, [discussionReplies]);
+
+  // Fetch networks from backend
+  const fetchNetworks = async () => {
+    setLoadingNetworks(true);
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_networks_api.php');
+      const result = await response.json();
+      if (result.success) {
+        setSectorNetworks(result.networks);
+      }
+    } catch (error) {
+      console.error('Error fetching networks:', error);
+    } finally {
+      setLoadingNetworks(false);
+    }
+  };
+
+  // Fetch sectors from backend
+  const fetchSectors = async () => {
+    setLoadingSectors(true);
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_sectors_api.php');
+      const result = await response.json();
+      if (result.success) {
+        setDynamicSectors(result.sectors);
+      }
+    } catch (error) {
+      console.error('Error fetching sectors:', error);
+    } finally {
+      setLoadingSectors(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNetworks();
+    fetchSectors();
+  }, []);
+
+  // Combine static sectors with dynamic sectors from database
+  const allSectors = [
+    ...sectors,
+    ...dynamicSectors.map(dbSector => ({
+      id: `db-${dbSector.id}`,
+      name: dbSector.sector_name,
+      description: dbSector.description || 'Custom sector for specialized collaboration',
+      ngoCount: dbSector.ngo_count || 0,
+      activeDiscussions: dbSector.active_discussions || 0,
+      resources: dbSector.resources || 0,
+      color: dbSector.color || 'bg-purple-500',
+      icon: Target // Default icon for custom sectors
+    }))
+  ];
+
+  const filteredSectors = allSectors.filter(sector =>
     sector.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -195,35 +415,68 @@ export function SectorNetworks() {
     activeSectors: sectors.length
   };
 
-  const handleNewDiscussion = (e: React.FormEvent) => {
+  const handleNewDiscussion = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
     const authorName = formData.get('author') as string || 'Anonymous User';
-    const newDiscussion = {
-      id: Date.now().toString(),
+    const sectorValue = formData.get('sector') as string;
+    
+    // Clean the sector value to remove any unwanted prefixes
+    const cleanSector = sectorValue?.replace(/^0+/, '') || sectorValue;
+    
+    const discussionData = {
       title: formData.get('title') as string,
       author: authorName,
-      sector: formData.get('sector') as string,
-      timestamp: 'Just now',
-      likes: 0,
-      replies: 0,
+      sector: cleanSector,
+      content: formData.get('content') as string,
       isPinned: false
     };
-    setSectorDiscussions([newDiscussion, ...sectorDiscussions]);
     
-    // Add to recent activities
-    const newActivity = {
-      id: Date.now().toString(),
-      type: 'discussion',
-      title: `New Discussion in ${formData.get('sector')} Sector`,
-      description: `"${formData.get('title')}" started by ${authorName}`,
-      timestamp: 'Just now',
-      icon: MessageSquare,
-      iconColor: 'blue',
-      stats: ['0 likes', '0 replies']
-    };
-    setRecentActivities([newActivity, ...recentActivities]);
-    setShowNewPost(false);
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/add_discussion.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(discussionData)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Add to frontend immediately
+        const newDiscussion = {
+          id: `db_${result.id}`,
+          title: discussionData.title,
+          author: discussionData.author,
+          sector: discussionData.sector,
+          timestamp: 'Just now',
+          likes: 0,
+          replies: 0,
+          isPinned: false
+        };
+        setSectorDiscussions([newDiscussion, ...sectorDiscussions]);
+        
+        // Add to recent activities
+        const newActivity = {
+          id: Date.now().toString(),
+          type: 'discussion',
+          title: `New Discussion in ${formData.get('sector')} Sector`,
+          description: `"${formData.get('title')}" started by ${authorName}`,
+          timestamp: 'Just now',
+          icon: MessageSquare,
+          iconColor: 'blue',
+          stats: ['0 likes', '0 replies']
+        };
+        setRecentActivities([newActivity, ...recentActivities]);
+        setShowNewPost(false);
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error creating discussion:', error);
+      alert('Failed to create discussion. Please check your connection.');
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -241,16 +494,10 @@ export function SectorNetworks() {
     }
   };
 
-
-
   const handlePreview = (resource: any) => {
     setPreviewResource(resource);
     setShowPreviewModal(true);
   };
-
-
-
-
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -298,10 +545,18 @@ export function SectorNetworks() {
             { label: 'Active Sectors', value: totalStats.activeSectors, icon: Target, color: 'purple' }
           ].map((stat: any, index: number) => {
             const Icon = stat.icon;
+            const bgColorClass = stat.color === 'orange' ? 'bg-orange-100' : 
+                               stat.color === 'blue' ? 'bg-blue-100' : 
+                               stat.color === 'green' ? 'bg-green-100' : 
+                               stat.color === 'purple' ? 'bg-purple-100' : 'bg-gray-100';
+            const textColorClass = stat.color === 'orange' ? 'text-orange-600' : 
+                                 stat.color === 'blue' ? 'text-blue-600' : 
+                                 stat.color === 'green' ? 'text-green-600' : 
+                                 stat.color === 'purple' ? 'text-purple-600' : 'text-gray-600';
             return (
               <div key={index} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[140px] flex flex-col">
-                <div className={`bg-${stat.color}-100 p-3 rounded-lg w-fit mb-3`}>
-                  <Icon className={`w-6 h-6 text-${stat.color}-600`} />
+                <div className={`${bgColorClass} p-3 rounded-lg w-fit mb-3`}>
+                  <Icon className={`w-6 h-6 ${textColorClass}`} />
                 </div>
                 <div className="flex-1 flex flex-col justify-center">
                   <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
@@ -325,11 +580,17 @@ export function SectorNetworks() {
                 {/* Dynamic Activities */}
                 {recentActivities.map((activity) => {
                   const Icon = activity.icon;
+                  const iconColorClass = activity.iconColor === 'blue' ? 'bg-blue-100' : 
+                                       activity.iconColor === 'green' ? 'bg-green-100' : 
+                                       activity.iconColor === 'orange' ? 'bg-orange-100' : 'bg-gray-100';
+                  const textColorClass = activity.iconColor === 'blue' ? 'text-blue-600' : 
+                                       activity.iconColor === 'green' ? 'text-green-600' : 
+                                       activity.iconColor === 'orange' ? 'text-orange-600' : 'text-gray-600';
                   return (
                     <div key={activity.id} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                       <div className="flex items-start gap-6">
-                        <div className={`bg-${activity.iconColor}-100 p-4 rounded-full`}>
-                          <Icon className={`w-8 h-8 text-${activity.iconColor}-600`} />
+                        <div className={`${iconColorClass} p-4 rounded-full`}>
+                          <Icon className={`w-8 h-8 ${textColorClass}`} />
                         </div>
                         <div className="flex-1">
                           <h3 className="text-xl font-semibold text-gray-900 mb-2">{activity.title}</h3>
@@ -480,7 +741,7 @@ export function SectorNetworks() {
               className="bg-orange-500 text-white px-8 py-4 rounded-xl hover:bg-orange-600 transition-colors flex items-center gap-3 font-semibold"
             >
               <Plus className="w-5 h-5" />
-              Join New Sector
+              Add New Sector
             </button>
           </div>
 
@@ -502,21 +763,24 @@ export function SectorNetworks() {
                   <p className="text-gray-700 mb-8 leading-relaxed text-lg">{sector.description}</p>
                   <div className="grid grid-cols-3 gap-3 mb-5">
                     <div className="text-center bg-gray-50 p-2 rounded-md">
-                      <p className="text-lg font-bold text-gray-900">{sector.ngoCount}</p>
+                      <p className="text-lg font-bold text-gray-900">{sectorNetworks.filter(network => network.focus_area === sector.name).length + 10}</p>
                       <p className="text-gray-600 text-xs">NGOs</p>
                     </div>
                     <div className="text-center bg-gray-50 p-2 rounded-md">
-                      <p className="text-lg font-bold text-gray-900">{sectorDiscussions.filter(d => d.sector === sector.name).length}</p>
+                      <p className="text-lg font-bold text-gray-900">{sectorDiscussions.filter(d => d.sector === sector.name).length || '-'}</p>
                       <p className="text-gray-600 text-xs">Discussions</p>
                     </div>
                     <div className="text-center bg-gray-50 p-2 rounded-md">
-                      <p className="text-lg font-bold text-gray-900">{quickInteractions.filter(i => i.sector === sector.name).length}</p>
+                      <p className="text-lg font-bold text-gray-900">{quickInteractions.filter(i => i.sector === sector.name).length || '-'}</p>
                       <p className="text-gray-600 text-xs">Interactions</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
                     <button 
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Join Network clicked for sector:', sector.id);
                         setJoiningSector(sector.id);
                         setShowJoinModal(true);
                       }}
@@ -535,7 +799,7 @@ export function SectorNetworks() {
                       }}
                       className="border-2 border-orange-500 text-orange-600 py-4 px-6 rounded-xl hover:bg-orange-50 transition-colors font-semibold"
                     >
-                      View Details
+                      View Networks ({sectorNetworks.filter(network => network.focus_area === sector.name).length})
                     </button>
                   </div>
                 </div>
@@ -565,6 +829,9 @@ export function SectorNetworks() {
                 className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => {
                   setSelectedDiscussion(discussion);
+                  if (discussion.id.startsWith('db_')) {
+                    loadRepliesFromDB(discussion.id.replace('db_', ''));
+                  }
                   setActiveView('discussion-detail');
                 }}
               >
@@ -727,7 +994,7 @@ export function SectorNetworks() {
                         <span className="text-lg font-bold text-green-600">+12.5%</span>
                       </div>
                       <div className="text-sm text-gray-500">
-                        {sectorDiscussions.filter(d => d.sector === sector.name).length} discussions • {quickInteractions.filter(i => i.sector === sector.name).length} interactions
+                        {sectorDiscussions.filter(d => d.sector === sector.name).length || '-'} discussions • {quickInteractions.filter(i => i.sector === sector.name).length || '-'} interactions
                       </div>
                     </div>
                   </div>
@@ -761,443 +1028,1032 @@ export function SectorNetworks() {
         </div>
       )}
 
-      {activeView === 'sector-detail' && selectedSector && (
-        <div className="space-y-8">
-          {(() => {
-            const sector = sectors.find(s => s.id === selectedSector);
-            if (!sector) return null;
-            const Icon = sector.icon;
-            
-            const sectorDiscussionsList = sectorDiscussions.filter(d => d.sector === sector.name);
-            const sectorInteractionsList = quickInteractions.filter(i => i.sector === sector.name);
-            
-            return (
-              <>
-                {/* Sector Header */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-6">
-                      <div className={`${sector.color} p-6 rounded-2xl`}>
-                        <Icon className="w-12 h-12 text-white" />
+      {activeView === 'sector-detail' && selectedSector && (() => {
+        const sector = allSectors.find(s => s.id === selectedSector);
+        if (!sector) return null;
+        const Icon = sector.icon;
+        const sectorDiscussionsFiltered = sectorDiscussions.filter(d => d.sector === sector.name);
+        const sectorInteractionsFiltered = quickInteractions.filter(i => i.sector === sector.name);
+        
+        return (
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="flex items-center gap-6 mb-8">
+              <button 
+                onClick={() => setActiveView('sectors')}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowRight className="w-6 h-6 rotate-180" />
+              </button>
+              <div className={`${sector.color} p-4 rounded-xl`}>
+                <Icon className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-semibold text-gray-900">{sector.name} Network</h1>
+                <p className="text-lg text-gray-600 mt-1">{sector.description}</p>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-4 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3 mb-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-600">NGOs</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{sectorNetworks.filter(network => network.focus_area === sector.name).length + 10}</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3 mb-2">
+                  <MessageSquare className="w-5 h-5 text-green-600" />
+                  <span className="text-sm font-medium text-gray-600">Discussions</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{sectorDiscussionsFiltered.length}</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3 mb-2">
+                  <Zap className="w-5 h-5 text-orange-600" />
+                  <span className="text-sm font-medium text-gray-600">Interactions</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{sectorInteractionsFiltered.length}</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3 mb-2">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  <span className="text-sm font-medium text-gray-600">Resources</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{sector.resources}</p>
+              </div>
+            </div>
+
+            {/* Network Members */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">Network Members</h3>
+                <span className="text-sm text-gray-600">
+                  {sectorNetworks.filter(network => network.focus_area === sector.name).length} organizations
+                </span>
+              </div>
+              
+              {loadingNetworks ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                  <p className="text-gray-600 mt-2">Loading network members...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sectorNetworks
+                    .filter(network => network.focus_area === sector.name)
+                    .map((network) => (
+                      <div key={network.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-orange-100 p-2 rounded-lg">
+                            <Users className="w-5 h-5 text-orange-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-gray-900 truncate">{network.ngo_name}</h4>
+                            <p className="text-sm text-gray-600 truncate">{network.location || 'Location not specified'}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                              <span>{network.members || 0} members</span>
+                              <span>{network.projects || 0} projects</span>
+                              {network.verified && (
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">✓ Verified</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {network.website && (
+                          <div className="mt-3">
+                            <a 
+                              href={network.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-orange-600 hover:text-orange-700 text-sm flex items-center gap-1"
+                            >
+                              <Globe className="w-4 h-4" />
+                              Visit Website
+                            </a>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <h1 className="text-4xl font-bold text-gray-900">{sector.name} Network</h1>
-                        <p className="text-xl text-gray-600 mt-2">{sector.description}</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => setActiveView('sectors')}
-                      className="text-orange-600 hover:text-orange-700 font-medium flex items-center gap-2"
-                    >
-                      ← Back to Sectors
-                    </button>
-                  </div>
+                    ))
+                  }
                   
-                  <div className="grid grid-cols-4 gap-6">
-                    <div className="text-center bg-gray-50 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-gray-900">{sector.ngoCount}</p>
-                      <p className="text-gray-600 text-sm">NGOs</p>
+                  {sectorNetworks.filter(network => network.focus_area === sector.name).length === 0 && (
+                    <div className="col-span-full text-center py-8">
+                      <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500">No organizations have joined this sector network yet.</p>
+                      <p className="text-sm text-gray-400 mt-1">Be the first to join and start building connections!</p>
                     </div>
-                    <div className="text-center bg-gray-50 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-gray-900">{sectorDiscussionsList.length}</p>
-                      <p className="text-gray-600 text-sm">Discussions</p>
-                    </div>
-                    <div className="text-center bg-gray-50 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-gray-900">{sectorInteractionsList.length}</p>
-                      <p className="text-gray-600 text-sm">Interactions</p>
-                    </div>
-                    <div className="text-center bg-gray-50 p-4 rounded-lg">
-                      <p className="text-2xl font-bold text-gray-900">12</p>
-                      <p className="text-gray-600 text-sm">Collaborations</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
+              )}
+            </div>
 
-                {/* Sector Content */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                  {/* NGO List */}
-                  <div className="mb-12">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-6">NGOs in {sector.name}</h3>
-                    <div className="grid grid-cols-2 gap-6">
-                      {Array.from({length: sector.ngoCount}, (_, i) => (
-                        <div key={i} className="bg-gray-50 p-6 rounded-xl">
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="bg-orange-100 p-3 rounded-full">
-                              <Users className="w-6 h-6 text-orange-600" />
-                            </div>
-                            <div>
-                              <h4 className="text-lg font-semibold text-gray-900">{sector.name} NGO {i + 1}</h4>
-                              <p className="text-gray-600">Active since 2020</p>
-                            </div>
-                          </div>
-                          <p className="text-gray-700 mb-4">Working on {sector.name.toLowerCase()} initiatives in rural areas.</p>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span>50+ projects</span>
-                            <span>1000+ beneficiaries</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Discussions */}
-                  <div className="mb-12">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-2xl font-bold text-gray-900">Recent Discussions</h3>
-                      <button 
-                        onClick={() => setShowNewPost(true)}
-                        className="bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors flex items-center gap-2"
-                      >
-                        <Plus className="w-5 h-5" />
-                        New Discussion
-                      </button>
-                    </div>
-                    <div className="space-y-6">
-                      {sectorDiscussionsList.length > 0 ? sectorDiscussionsList.map((discussion) => (
-                        <div 
-                          key={discussion.id} 
-                          className="bg-gray-50 p-6 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors"
-                          onClick={() => {
-                            setSelectedDiscussion(discussion);
-                            setActiveView('discussion-detail');
-                          }}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="bg-orange-100 p-3 rounded-full">
-                              <User className="w-6 h-6 text-orange-600" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                {discussion.isPinned && <Pin className="w-4 h-4 text-orange-600" />}
-                                <h4 className="text-lg font-semibold text-gray-900">{discussion.title}</h4>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4 text-sm text-gray-600">
-                                  <span>{discussion.author}</span>
-                                  <span>{discussion.timestamp}</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-1">
-                                    <ThumbsUp className="w-4 h-4" />
-                                    <span>{discussion.likes}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Reply className="w-4 h-4" />
-                                    <span>{discussion.replies}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="text-center py-12 text-gray-500">
-                          <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                          <p>No discussions yet. Start the first conversation!</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Quick Interactions */}
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-2xl font-semibold text-gray-900">Sector Interactions</h3>
-                      <button 
-                        onClick={() => setShowQuickPost(true)}
-                        className="bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors flex items-center gap-2"
-                      >
-                        <Zap className="w-5 h-5" />
-                        Quick Post
-                      </button>
-                    </div>
-                    <div className="space-y-4">
-                      {sectorInteractionsList.length > 0 ? sectorInteractionsList.map((interaction) => (
-                        <div key={interaction.id} className="bg-gray-50 p-6 rounded-xl">
-                          <div className="flex items-start gap-4">
-                            <div className={`p-3 rounded-xl ${
-                              interaction.type === 'Need Help' ? 'bg-orange-100' : 'bg-green-100'
-                            }`}>
-                              {interaction.type === 'Need Help' ? 
-                                <HelpCircle className="w-6 h-6 text-orange-600" /> :
-                                <UserCheck className="w-6 h-6 text-green-600" />
-                              }
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h4 className="text-lg font-semibold text-gray-900">{interaction.title}</h4>
-                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                  interaction.type === 'Need Help' 
-                                    ? 'bg-orange-100 text-orange-800' 
-                                    : 'bg-green-100 text-green-800'
-                                }`}>
-                                  {interaction.type}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4 text-sm text-gray-600">
-                                  <span>{interaction.author}</span>
-                                  <span>{interaction.timestamp}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <MessageCircle className="w-4 h-4" />
-                                  <span>{interaction.responses} responses</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="text-center py-12 text-gray-500">
-                          <Zap className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                          <p>No interactions yet. Post the first interaction!</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+            {/* Content Grid */}
+            <div className="grid grid-cols-2 gap-8">
+              {/* Recent Discussions */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900">Recent Discussions</h3>
+                  <button 
+                    onClick={() => setActiveView('discussions')}
+                    className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+                  >
+                    View All
+                  </button>
                 </div>
-              </>
-            );
-          })()}
-        </div>
-      )}
+                <div className="space-y-4">
+                  {sectorDiscussionsFiltered.slice(0, 3).map((discussion) => (
+                    <div key={discussion.id} className="p-4 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">{discussion.title}</h4>
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>{discussion.author}</span>
+                        <div className="flex items-center gap-3">
+                          <span>{discussion.likes} likes</span>
+                          <span>{discussion.replies} replies</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {sectorDiscussionsFiltered.length === 0 && (
+                    <p className="text-gray-500 text-center py-4">No discussions yet in this sector</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Interactions */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900">Quick Interactions</h3>
+                  <button 
+                    onClick={() => setActiveView('quick-interactions')}
+                    className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+                  >
+                    View All
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {sectorInteractionsFiltered.slice(0, 3).map((interaction) => (
+                    <div key={interaction.id} className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          interaction.type === 'Need Help' 
+                            ? 'bg-orange-100 text-orange-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {interaction.type}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          interaction.urgency === 'Immediate' 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {interaction.urgency}
+                        </span>
+                      </div>
+                      <h4 className="font-medium text-gray-900 mb-2">{interaction.title}</h4>
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>{interaction.author}</span>
+                        <span>{interaction.responses} responses</span>
+                      </div>
+                    </div>
+                  ))}
+                  {sectorInteractionsFiltered.length === 0 && (
+                    <p className="text-gray-500 text-center py-4">No interactions yet in this sector</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <button 
+                onClick={() => {
+                  setJoiningSector(sector.id);
+                  setShowJoinModal(true);
+                }}
+                className={`px-6 py-3 rounded-xl font-semibold transition-colors ${
+                  joinedSectors.includes(sector.id)
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                }`}
+              >
+                {joinedSectors.includes(sector.id) ? '✓ Joined Network' : 'Join Network'}
+              </button>
+              <button 
+                onClick={() => setShowNewPost(true)}
+                className="border-2 border-orange-500 text-orange-600 px-6 py-3 rounded-xl hover:bg-orange-50 transition-colors font-semibold"
+              >
+                Start Discussion
+              </button>
+              <button 
+                onClick={() => setShowQuickPost(true)}
+                className="border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Quick Post
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {activeView === 'discussion-detail' && selectedDiscussion && (
         <div className="space-y-8">
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <button 
-                onClick={() => {
-                  setActiveView('discussions');
-                  setSelectedDiscussion(null);
-                }}
-                className="text-orange-600 hover:text-orange-700 font-medium flex items-center gap-2"
-              >
-                ← Back to Discussions
-              </button>
-              <span className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-semibold">
-                {selectedDiscussion.sector}
-              </span>
+          <div className="flex items-center gap-6 mb-8">
+            <button 
+              onClick={() => setActiveView('discussions')}
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowRight className="w-6 h-6 rotate-180" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-semibold text-gray-900">{selectedDiscussion.title}</h1>
+              <p className="text-lg text-gray-600 mt-1">Discussion in {selectedDiscussion.sector} Sector</p>
             </div>
-            
-            {/* Discussion Header */}
-            <div className="flex items-start gap-6 mb-8">
+          </div>
+
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex items-start gap-6 mb-6">
               <div className="bg-orange-100 p-4 rounded-full">
                 <User className="w-8 h-8 text-orange-600" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
-                  {selectedDiscussion.isPinned && <Pin className="w-5 h-5 text-orange-600" />}
-                  <h1 className="text-3xl font-semibold text-gray-900">{selectedDiscussion.title}</h1>
+                  <h2 className="text-2xl font-semibold text-gray-900">{selectedDiscussion.title}</h2>
+                  <span className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-semibold">
+                    {selectedDiscussion.sector}
+                  </span>
                 </div>
-                <div className="flex items-center gap-6 text-gray-600 mb-6">
+                <div className="flex items-center gap-6 text-gray-600 mb-4">
                   <span className="font-medium">{selectedDiscussion.author}</span>
                   <span>{selectedDiscussion.timestamp}</span>
                 </div>
-                
-                {/* Discussion Content */}
-                <div className="bg-gray-50 p-6 rounded-xl mb-6">
-                  <p className="text-gray-700 text-lg leading-relaxed">
-                    This discussion focuses on implementing effective strategies for {selectedDiscussion.sector.toLowerCase()} initiatives. 
-                    We're looking to share experiences, best practices, and collaborate on innovative solutions that can benefit our communities.
-                  </p>
-                  <p className="text-gray-700 text-lg leading-relaxed mt-4">
-                    Key areas for discussion include resource allocation, community engagement, partnership building, 
-                    and measuring impact. Your insights and experiences are valuable to help shape better approaches in this sector.
-                  </p>
+                <div className="prose max-w-none text-gray-700 mb-6">
+                  <p>This is a detailed discussion about {selectedDiscussion.title.toLowerCase()}. The discussion covers various aspects and best practices that can help organizations in the {selectedDiscussion.sector} sector improve their impact and reach.</p>
                 </div>
-                
-                {/* Action Buttons */}
                 <div className="flex items-center gap-6">
-                  <button className="flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors font-semibold">
+                  <button 
+                    className="flex items-center gap-2 text-gray-600 hover:text-orange-600 transition-colors"
+                    onClick={() => {
+                      setSectorDiscussions(prev => 
+                        prev.map(d => 
+                          d.id === selectedDiscussion.id 
+                            ? { ...d, likes: d.likes + 1 }
+                            : d
+                        )
+                      );
+                    }}
+                  >
                     <ThumbsUp className="w-5 h-5" />
-                    Like ({selectedDiscussion.likes})
+                    <span className="font-medium">{selectedDiscussion.likes}</span>
                   </button>
-                  <button className="flex items-center gap-2 border-2 border-orange-500 text-orange-600 px-6 py-3 rounded-xl hover:bg-orange-50 transition-colors font-semibold">
+                  <span className="flex items-center gap-2 text-gray-600">
                     <Reply className="w-5 h-5" />
-                    Reply ({selectedDiscussion.replies})
-                  </button>
-                  <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors">
-                    <Eye className="w-5 h-5" />
-                    156 views
-                  </button>
+                    <span className="font-medium">{discussionReplies[selectedDiscussion.id]?.length || 0} replies</span>
+                  </span>
                 </div>
               </div>
             </div>
           </div>
-          
-          {/* Replies Section */}
+
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-8">Replies ({selectedDiscussion.replies})</h2>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Replies ({discussionReplies[selectedDiscussion.id]?.length || 0})</h3>
             
-            {/* Reply Form */}
-            <div className="bg-gray-50 p-6 rounded-xl mb-8">
-              <div className="flex items-start gap-4">
-                <div className="bg-orange-100 p-3 rounded-full">
-                  <User className="w-6 h-6 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <textarea
-                    placeholder="Share your thoughts and experiences..."
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
-                  />
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <button className="hover:text-orange-600 transition-colors">📎 Attach file</button>
-                      <button className="hover:text-orange-600 transition-colors">😊 Add emoji</button>
+            <form className="mb-8" onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              
+              if (selectedDiscussion.id.startsWith('db_')) {
+                // Save to database for database discussions
+                const replyData = {
+                  discussion_id: selectedDiscussion.id.replace('db_', ''),
+                  author: formData.get('author') as string,
+                  content: formData.get('content') as string
+                };
+                
+                try {
+                  const response = await fetch('http://localhost/NGO-India/backend/add_reply.php', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(replyData)
+                  });
+                  
+                  const result = await response.json();
+                  
+                  if (result.success) {
+                    loadRepliesFromDB(selectedDiscussion.id.replace('db_', ''));
+                    setSectorDiscussions(prev => 
+                      prev.map(d => 
+                        d.id === selectedDiscussion.id 
+                          ? { ...d, replies: d.replies + 1 }
+                          : d
+                      )
+                    );
+                    (e.target as HTMLFormElement).reset();
+                  } else {
+                    alert('Error: ' + result.error);
+                  }
+                } catch (error) {
+                  console.error('Error adding reply:', error);
+                  alert('Failed to add reply. Please check your connection.');
+                }
+              } else {
+                // Use localStorage for initial discussions
+                const newReply = {
+                  id: Date.now().toString(),
+                  author: formData.get('author') as string,
+                  content: formData.get('content') as string,
+                  timestamp: 'Just now',
+                  likes: 0
+                };
+                
+                setDiscussionReplies(prev => ({
+                  ...prev,
+                  [selectedDiscussion.id]: [...(prev[selectedDiscussion.id] || []), newReply]
+                }));
+                
+                setSectorDiscussions(prev => 
+                  prev.map(d => 
+                    d.id === selectedDiscussion.id 
+                      ? { ...d, replies: d.replies + 1 }
+                      : d
+                  )
+                );
+                
+                (e.target as HTMLFormElement).reset();
+              }
+            }}>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <input
+                  name="author"
+                  type="text"
+                  placeholder="Your name"
+                  required
+                  className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+              <textarea
+                name="content"
+                rows={3}
+                placeholder="Share your thoughts on this discussion..."
+                required
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-4"
+              />
+              <button type="submit" className="bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors font-semibold">
+                Post Reply
+              </button>
+            </form>
+
+            <div className="space-y-6">
+              {(discussionReplies[selectedDiscussion.id] || []).map((reply) => (
+                <div key={reply.id} className="flex items-start gap-4 p-6 bg-gray-50 rounded-xl">
+                  <div className="bg-gray-200 p-3 rounded-full">
+                    <User className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="font-semibold text-gray-900">{reply.author}</span>
+                      <span className="text-gray-600 text-sm">{reply.timestamp}</span>
                     </div>
-                    <button className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-semibold">
-                      Post Reply
+                    <p className="text-gray-700 mb-3">{reply.content}</p>
+                    <button 
+                      className="flex items-center gap-2 text-gray-600 hover:text-orange-600 transition-colors text-sm"
+                      onClick={() => {
+                        setDiscussionReplies(prev => ({
+                          ...prev,
+                          [selectedDiscussion.id]: prev[selectedDiscussion.id].map(r => 
+                            r.id === reply.id ? { ...r, likes: r.likes + 1 } : r
+                          )
+                        }));
+                      }}
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                      <span>{reply.likes}</span>
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Sample Replies */}
-            <div className="space-y-6">
-              {[
-                {
-                  id: '1',
-                  author: 'Dr. Sanjay Verma',
-                  timestamp: '1 hour ago',
-                  content: 'Great discussion topic! In our experience with rural education programs, we\'ve found that community involvement is crucial. We\'ve seen 40% better outcomes when local leaders are actively engaged in the planning process.',
-                  likes: 8,
-                  replies: 2
-                },
-                {
-                  id: '2',
-                  author: 'Anita Desai',
-                  timestamp: '3 hours ago',
-                  content: 'This aligns perfectly with our recent project findings. We\'ve been implementing similar strategies in Maharashtra and would love to share our resource allocation framework. It might be helpful for organizations starting new initiatives.',
-                  likes: 12,
-                  replies: 4
-                },
-                {
-                  id: '3',
-                  author: 'Rohit Malhotra',
-                  timestamp: '5 hours ago',
-                  content: 'Thank you for starting this important conversation. I\'ve attached our latest impact assessment report that shows measurable outcomes from our collaborative approach. Happy to discuss the methodology in detail.',
-                  likes: 15,
-                  replies: 6
-                }
-              ].map((reply) => (
-                <div key={reply.id} className="border-l-4 border-orange-200 pl-6">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-gray-100 p-3 rounded-full">
-                      <User className="w-6 h-6 text-gray-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-3">
-                        <span className="font-semibold text-gray-900">{reply.author}</span>
-                        <span className="text-gray-600 text-sm">{reply.timestamp}</span>
-                      </div>
-                      <p className="text-gray-700 leading-relaxed mb-4">{reply.content}</p>
-                      <div className="flex items-center gap-6">
-                        <button className="flex items-center gap-2 text-gray-600 hover:text-orange-600 transition-colors text-sm">
-                          <ThumbsUp className="w-4 h-4" />
-                          <span>{reply.likes}</span>
-                        </button>
-                        <button className="flex items-center gap-2 text-gray-600 hover:text-orange-600 transition-colors text-sm">
-                          <Reply className="w-4 h-4" />
-                          Reply ({reply.replies})
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               ))}
+              
+              {(!discussionReplies[selectedDiscussion.id] || discussionReplies[selectedDiscussion.id].length === 0) && (
+                <div className="text-center py-8">
+                  <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500">No replies yet. Be the first to share your thoughts!</p>
+                </div>
+              )}
             </div>
-            
-            {selectedDiscussion.replies > 3 && (
-              <div className="text-center mt-8">
-                <button className="text-orange-600 hover:text-orange-700 font-medium">
-                  Load more replies ({selectedDiscussion.replies - 3} remaining)
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {activeView === 'interaction-detail' && selectedInteractionDetail && (
-        <div className="space-y-8">
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <button 
-                onClick={() => {
-                  setActiveView('quick-interactions');
-                  setSelectedInteractionDetail(null);
-                }}
-                className="text-orange-600 hover:text-orange-700 font-medium flex items-center gap-2"
-              >
-                ← Back to Interactions
+      {/* Modals */}
+      {showNewPost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-3xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
+            <button 
+              onClick={() => setShowNewPost(false)}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <h2 className="text-3xl font-bold text-gray-900 mb-8">Start New Discussion</h2>
+            <form className="space-y-6" onSubmit={handleNewDiscussion}>
+              <input
+                name="author"
+                type="text"
+                placeholder="Your name"
+                required
+                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
+              />
+              <input
+                name="title"
+                type="text"
+                placeholder="Discussion title..."
+                required
+                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
+              />
+              <select name="sector" required className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg">
+                <option value="">Select Sector</option>
+                {sectors.map((sector) => <option key={sector.id} value={sector.name}>{sector.name}</option>)}
+              </select>
+              <textarea
+                name="content"
+                rows={6}
+                placeholder="Share your thoughts..."
+                required
+                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
+              />
+              <button type="submit" className="w-full bg-orange-500 text-white py-4 px-8 rounded-xl hover:bg-orange-600 transition-colors font-semibold text-lg">
+                Post Discussion
               </button>
-              <div className="flex items-center gap-3">
-                <span className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-semibold">
-                  {selectedInteractionDetail.sector}
-                </span>
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                  selectedInteractionDetail.type === 'Need Help' 
-                    ? 'bg-orange-100 text-orange-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {selectedInteractionDetail.type}
-                </span>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showQuickPost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-3xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
+            <button 
+              onClick={() => setShowQuickPost(false)}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <h2 className="text-3xl font-semibold text-gray-900 mb-8">Quick Post</h2>
+            <form className="space-y-6" onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              const authorName = formData.get('author') as string || 'Anonymous User';
+              const sectorValue = formData.get('sector') as string;
+              
+              // Clean the sector value to remove any unwanted prefixes
+              const cleanSector = sectorValue?.replace(/^0+/, '') || sectorValue;
+              
+              const postData = {
+                title: formData.get('title') as string,
+                author: authorName,
+                sector: cleanSector,
+                type: formData.get('type') as string,
+                urgency: formData.get('urgency') as string,
+                description: formData.get('description') as string || ''
+              };
+              
+              try {
+                // Save to database
+                const response = await fetch('http://localhost/NGO-India/backend/add_sector_post.php', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(postData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                  // Add to frontend immediately
+                  const newInteraction = {
+                    id: `db_${result.id}`,
+                    title: postData.title,
+                    author: postData.author,
+                    sector: postData.sector,
+                    type: postData.type,
+                    urgency: postData.urgency,
+                    timestamp: 'Just now',
+                    responses: 0,
+                    status: 'Active',
+                    description: postData.description
+                  };
+                  setQuickInteractions([newInteraction, ...quickInteractions]);
+                  
+                  // Add to recent activities
+                  const newActivity = {
+                    id: Date.now().toString() + '_activity',
+                    type: 'interaction',
+                    title: `New ${postData.type} Post in ${postData.sector} Sector`,
+                    description: `"${postData.title}" posted by ${authorName}`,
+                    timestamp: 'Just now',
+                    icon: postData.type === 'Need Help' ? HelpCircle : UserCheck,
+                    iconColor: postData.type === 'Need Help' ? 'orange' : 'green',
+                    stats: ['0 responses', `${postData.urgency} urgency`]
+                  };
+                  setRecentActivities([newActivity, ...recentActivities]);
+                  setShowQuickPost(false);
+                } else {
+                  alert('Error: ' + result.error);
+                }
+              } catch (error) {
+                console.error('Error creating sector post:', error);
+                alert('Failed to create post. Please check your connection.');
+              }
+            }}>
+              <input
+                name="author"
+                type="text"
+                placeholder="Your name"
+                required
+                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
+              />
+              <input
+                name="title"
+                type="text"
+                placeholder="What do you need help with or what can you offer?"
+                required
+                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
+              />
+              <div className="grid grid-cols-3 gap-6">
+                <select name="sector" required className="px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg">
+                  <option value="">Select Sector</option>
+                  {sectors.map((sector) => <option key={sector.id} value={sector.name}>{sector.name}</option>)}
+                </select>
+                <select name="type" required className="px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg">
+                  <option value="">Type</option>
+                  <option value="Need Help">Need Help</option>
+                  <option value="Can Help">Can Help</option>
+                </select>
+                <select name="urgency" required className="px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg">
+                  <option value="">Urgency</option>
+                  <option value="Immediate">Immediate</option>
+                  <option value="This Week">This Week</option>
+                  <option value="This Month">This Month</option>
+                </select>
               </div>
+              <textarea
+                name="description"
+                rows={4}
+                placeholder="Provide more details about your request or offer..."
+                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
+              />
+              <button type="submit" className="w-full bg-orange-500 text-white py-4 px-8 rounded-xl hover:bg-orange-600 transition-colors font-semibold text-lg">
+                Post Quick Interaction
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Join New Sector Modal */}
+      {showNewSectorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-2xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
+            <button 
+              onClick={() => setShowNewSectorModal(false)}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <div className="text-center mb-8">
+              <div className="bg-orange-500 p-6 rounded-2xl w-fit mx-auto mb-4">
+                <Plus className="w-12 h-12 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Add New Sector</h2>
+              <p className="text-lg text-gray-600">Create or join a sector network that matches your organization's focus</p>
             </div>
             
-            <div className="flex items-start gap-6 mb-8">
-              <div className={`p-4 rounded-xl ${
-                selectedInteractionDetail.type === 'Need Help' ? 'bg-orange-100' : 'bg-green-100'
-              }`}>
-                {selectedInteractionDetail.type === 'Need Help' ? 
-                  <HelpCircle className="w-8 h-8 text-orange-600" /> :
-                  <UserCheck className="w-8 h-8 text-green-600" />
+            <form className="space-y-6" onSubmit={async (e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              setSubmitMessage('');
+              
+              try {
+                const formData = new FormData(e.target as HTMLFormElement);
+                
+                // First add the sector
+                const sectorData = {
+                  sectorName: formData.get('sectorName') as string,
+                  description: `Custom sector for ${formData.get('sectorName')} organizations`,
+                  createdBy: formData.get('ngoName') as string
+                };
+                
+                await fetch('http://localhost/NGO-India/backend/add_sector_api.php', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(sectorData)
+                });
+                
+                // Then add the organization to networks
+                const joinData = {
+                  ngoName: formData.get('ngoName') as string,
+                  email: formData.get('email') as string,
+                  phone: formData.get('phone') as string,
+                  location: formData.get('location') as string,
+                  focusArea: formData.get('sectorName') as string,
+                  description: formData.get('description') as string,
+                  website: formData.get('website') as string,
+                  members: parseInt(formData.get('members') as string) || 0,
+                  projects: parseInt(formData.get('projects') as string) || 0
+                };
+                
+                const response = await fetch('http://localhost/NGO-India/backend/add_network_api.php', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(joinData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                  setSubmitMessage('Successfully added the new sector!');
+                  fetchNetworks();
+                  fetchSectors(); // Refresh sectors list
+                  setTimeout(() => {
+                    setShowNewSectorModal(false);
+                    setSubmitMessage('');
+                  }, 2000);
+                } else {
+                  setSubmitMessage('Error: ' + (result.error || 'Failed to add sector'));
                 }
+              } catch (error) {
+                console.error('Network error:', error);
+                setSubmitMessage('Network error. Please try again.');
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sector Name *</label>
+                <input
+                  name="sectorName"
+                  type="text"
+                  required
+                  placeholder="e.g., Rural Development, Disaster Relief, Child Welfare"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
               </div>
-              <div className="flex-1">
-                <h1 className="text-3xl font-semibold text-gray-900 mb-4">{selectedInteractionDetail.title}</h1>
-                <div className="flex items-center gap-6 text-gray-600 mb-6">
-                  <span className="font-medium">{selectedInteractionDetail.author}</span>
-                  <span>{selectedInteractionDetail.timestamp}</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                    selectedInteractionDetail.urgency === 'Immediate' 
-                      ? 'bg-red-100 text-red-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {selectedInteractionDetail.urgency}
-                  </span>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Organization Name *</label>
+                <input
+                  name="ngoName"
+                  type="text"
+                  required
+                  placeholder="Enter your organization name"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="organization@example.com"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    placeholder="+91 9876543210"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
                 </div>
-                
-                <div className="bg-gray-50 p-6 rounded-xl mb-6">
-                  <p className="text-gray-700 text-lg leading-relaxed">
-                    {selectedInteractionDetail.type === 'Need Help' 
-                      ? `We are looking for assistance with ${selectedInteractionDetail.title.toLowerCase()}. This is an ${selectedInteractionDetail.urgency.toLowerCase()} priority request in the ${selectedInteractionDetail.sector} sector.`
-                      : `We are offering help with ${selectedInteractionDetail.title.toLowerCase()}. This service is available ${selectedInteractionDetail.urgency.toLowerCase()} in the ${selectedInteractionDetail.sector} sector.`
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <input
+                    name="location"
+                    type="text"
+                    placeholder="City, State"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Website (Optional)</label>
+                <input
+                  name="website"
+                  type="url"
+                  placeholder="https://www.yourorganization.org"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Team Members</label>
+                  <input
+                    name="members"
+                    type="number"
+                    min="0"
+                    placeholder="Number of team members"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Active Projects</label>
+                  <input
+                    name="projects"
+                    type="number"
+                    min="0"
+                    placeholder="Number of active projects"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Organization Description *</label>
+                <textarea
+                  name="description"
+                  rows={4}
+                  required
+                  placeholder="Describe your organization's mission and how it relates to this sector..."
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+              
+              {submitMessage && (
+                <div className={`p-4 rounded-xl text-center font-medium ${
+                  submitMessage.includes('Successfully') 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {submitMessage}
+                </div>
+              )}
+              
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className={`w-full py-4 px-8 rounded-xl font-semibold text-lg transition-colors ${
+                  isSubmitting 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                }`}
+              >
+                {isSubmitting ? 'Adding Sector...' : 'Add New Sector'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Join Network Modal */}
+      {console.log('Modal state:', { showJoinModal, joiningsector })}
+      {showJoinModal && joiningsector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-2xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
+            <button 
+              onClick={() => {
+                setShowJoinModal(false);
+                setJoiningSector(null);
+              }}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            {(() => {
+              const sector = allSectors.find(s => s.id === joiningsector);
+              if (!sector) return null;
+              const Icon = sector.icon;
+              
+              return (
+                <div>
+                  <div className="text-center mb-8">
+                    <div className={`${sector.color} p-6 rounded-2xl w-fit mx-auto mb-4`}>
+                      <Icon className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Join {sector.name} Network</h2>
+                    <p className="text-lg text-gray-600">{sector.description}</p>
+                  </div>
+                  
+                  <div className="bg-orange-50 p-6 rounded-xl mb-8">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Network Benefits:</h3>
+                    <ul className="space-y-3 text-gray-700">
+                      <li className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span>Connect with {sector.ngoCount} NGOs in {sector.name}</span>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span>Access to sector-specific discussions and resources</span>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span>Collaboration opportunities with partner organizations</span>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span>Priority access to sector events and training</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <form className="space-y-6" onSubmit={async (e) => {
+                    e.preventDefault();
+                    setIsSubmitting(true);
+                    setSubmitMessage('');
+                    
+                    try {
+                      const formData = new FormData(e.target as HTMLFormElement);
+                      const joinData = {
+                        ngoName: formData.get('ngoName') as string,
+                        email: formData.get('email') as string,
+                        phone: formData.get('phone') as string,
+                        location: formData.get('location') as string,
+                        focusArea: sector.name,
+                        description: formData.get('description') as string,
+                        website: formData.get('website') as string,
+                        members: parseInt(formData.get('members') as string) || 0,
+                        projects: parseInt(formData.get('projects') as string) || 0,
+                        role: formData.get('role') as string
+                      };
+                      
+                      const response = await fetch('http://localhost/NGO-India/backend/add_network_api.php', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(joinData)
+                      });
+                      
+                      const result = await response.json();
+                      
+                      if (result.success) {
+                        setJoinedSectors([...joinedSectors, joiningsector]);
+                        setSubmitMessage('Successfully joined the network!');
+                        fetchNetworks(); // Refresh the networks list
+                        setTimeout(() => {
+                          setShowJoinModal(false);
+                          setJoiningSector(null);
+                          setSubmitMessage('');
+                        }, 2000);
+                      } else {
+                        setSubmitMessage('Error: ' + (result.error || 'Failed to join network'));
+                      }
+                    } catch (error) {
+                      console.error('Network error:', error);
+                      setSubmitMessage('Network error. Please try again.');
+                    } finally {
+                      setIsSubmitting(false);
                     }
-                  </p>
+                  }}>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Organization Name *</label>
+                      <input
+                        name="ngoName"
+                        type="text"
+                        required
+                        placeholder="Enter your organization name"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                      <input
+                        name="email"
+                        type="email"
+                        required
+                        placeholder="organization@example.com"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input
+                          name="phone"
+                          type="tel"
+                          placeholder="+91 9876543210"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                        <input
+                          name="location"
+                          type="text"
+                          placeholder="City, State"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Website (Optional)</label>
+                      <input
+                        name="website"
+                        type="url"
+                        placeholder="https://www.yourorganization.org"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Team Members</label>
+                        <input
+                          name="members"
+                          type="number"
+                          min="0"
+                          placeholder="Number of team members"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Active Projects</label>
+                        <input
+                          name="projects"
+                          type="number"
+                          min="0"
+                          placeholder="Number of active projects"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Your Role</label>
+                      <select name="role" required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Select your role</option>
+                        <option value="Director">Director/CEO</option>
+                        <option value="Program Manager">Program Manager</option>
+                        <option value="Project Coordinator">Project Coordinator</option>
+                        <option value="Field Officer">Field Officer</option>
+                        <option value="Volunteer">Volunteer</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Organization Description *</label>
+                      <textarea
+                        name="description"
+                        rows={4}
+                        required
+                        placeholder="Tell us about your organization, its mission, and how you plan to contribute to this network..."
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" id="terms" required className="w-5 h-5 text-orange-600" />
+                      <label htmlFor="terms" className="text-sm text-gray-700">
+                        I agree to the network guidelines and commit to active participation
+                      </label>
+                    </div>
+                    
+                    {submitMessage && (
+                      <div className={`p-4 rounded-xl text-center font-medium ${
+                        submitMessage.includes('Successfully') 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {submitMessage}
+                      </div>
+                    )}
+                    
+                    <button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      className={`w-full py-4 px-8 rounded-xl font-semibold text-lg transition-colors ${
+                        isSubmitting 
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                          : 'bg-orange-500 text-white hover:bg-orange-600'
+                      }`}
+                    >
+                      {isSubmitting ? 'Joining Network...' : 'Join Network'}
+                    </button>
+                  </form>
                 </div>
-                
-                <div className="flex items-center gap-6">
-                  <button 
-                    onClick={() => {
-                      setSelectedInteraction(selectedInteractionDetail);
-                      setShowResponseModal(true);
-                    }}
-                    className="flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors font-semibold"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    Respond ({selectedInteractionDetail.responses})
-                  </button>
-                  <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors">
-                    <Eye className="w-5 h-5" />
-                    89 views
-                  </button>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -1237,18 +2093,48 @@ export function SectorNetworks() {
               </div>
             </div>
             
-            <form className="space-y-6" onSubmit={(e) => {
+            <form className="space-y-6" onSubmit={async (e) => {
               e.preventDefault();
-              setQuickInteractions(prev => 
-                prev.map(item => 
-                  item.id === selectedInteraction.id 
-                    ? { ...item, responses: item.responses + 1 }
-                    : item
-                )
-              );
-              setShowResponseModal(false);
-              setSelectedInteraction(null);
-              alert(`Your response has been sent to ${selectedInteraction.author}!`);
+              const formData = new FormData(e.target as HTMLFormElement);
+              
+              const responseData = {
+                post_name: selectedInteraction.title,
+                name: formData.get('name') as string,
+                organization: formData.get('organization') as string,
+                email: formData.get('email') as string,
+                message: formData.get('message') as string
+              };
+              
+              try {
+                // Save to database
+                const response = await fetch('http://localhost/NGO-India/backend/add_post_response.php', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(responseData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                  setQuickInteractions(prev => 
+                    prev.map(item => 
+                      item.id === selectedInteraction.id 
+                        ? { ...item, responses: item.responses + 1 }
+                        : item
+                    )
+                  );
+                  setShowResponseModal(false);
+                  setSelectedInteraction(null);
+                  alert(`Your response has been sent to ${selectedInteraction.author}!`);
+                } else {
+                  alert('Error: ' + result.error);
+                }
+              } catch (error) {
+                console.error('Error sending response:', error);
+                alert('Failed to send response. Please check your connection.');
+              }
             }}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
@@ -1279,16 +2165,6 @@ export function SectorNetworks() {
                   type="email"
                   required
                   placeholder="your.email@example.com"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                <input
-                  name="phone"
-                  type="tel"
-                  placeholder="+91 9876543210"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
@@ -1325,422 +2201,6 @@ export function SectorNetworks() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modals */}
-      {showNewPost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-3xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
-            <button 
-              onClick={() => setShowNewPost(false)}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <h2 className="text-3xl font-bold text-gray-900 mb-8">Start New Discussion</h2>
-            <form className="space-y-6" onSubmit={handleNewDiscussion}>
-              <input
-                name="author"
-                type="text"
-                placeholder="Your name"
-                required
-                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
-              />
-              <input
-                name="title"
-                type="text"
-                placeholder="Discussion title..."
-                required
-                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
-              />
-              <select name="sector" required className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg">
-                <option value="">Select Sector</option>
-                {sectors.map(sector => <option key={sector.id} value={sector.name}>{sector.name}</option>)}
-              </select>
-              <textarea
-                name="content"
-                rows={6}
-                placeholder="Share your thoughts..."
-                required
-                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
-              />
-              <button type="submit" className="w-full bg-orange-500 text-white py-4 px-8 rounded-xl hover:bg-orange-600 transition-colors font-semibold text-lg">
-                Post Discussion
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showQuickPost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-3xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
-            <button 
-              onClick={() => setShowQuickPost(false)}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <h2 className="text-3xl font-semibold text-gray-900 mb-8">Quick Post</h2>
-            <form className="space-y-6" onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target as HTMLFormElement);
-              const authorName = formData.get('author') as string || 'Anonymous User';
-              const newInteraction = {
-                id: Date.now().toString(),
-                title: formData.get('title') as string,
-                author: authorName,
-                sector: formData.get('sector') as string,
-                type: formData.get('type') as string,
-                urgency: formData.get('urgency') as string,
-                timestamp: 'Just now',
-                responses: 0,
-                status: 'Active'
-              };
-              setQuickInteractions([newInteraction, ...quickInteractions]);
-              
-              // Add to recent activities
-              const newActivity = {
-                id: Date.now().toString() + '_activity',
-                type: 'interaction',
-                title: `New ${formData.get('type')} Post in ${formData.get('sector')} Sector`,
-                description: `"${formData.get('title')}" posted by ${authorName}`,
-                timestamp: 'Just now',
-                icon: formData.get('type') === 'Need Help' ? HelpCircle : UserCheck,
-                iconColor: formData.get('type') === 'Need Help' ? 'orange' : 'green',
-                stats: ['0 responses', `${formData.get('urgency')} urgency`]
-              };
-              setRecentActivities([newActivity, ...recentActivities]);
-              setShowQuickPost(false);
-            }}>
-              <input
-                name="author"
-                type="text"
-                placeholder="Your name"
-                required
-                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
-              />
-              <input
-                name="title"
-                type="text"
-                placeholder="What do you need help with or what can you offer?"
-                required
-                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
-              />
-              <div className="grid grid-cols-3 gap-6">
-                <select name="sector" required className="px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg">
-                  <option value="">Select Sector</option>
-                  {sectors.map(sector => <option key={sector.id} value={sector.name}>{sector.name}</option>)}
-                </select>
-                <select name="type" required className="px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg">
-                  <option value="">Type</option>
-                  <option value="Need Help">Need Help</option>
-                  <option value="Can Help">Can Help</option>
-                </select>
-                <select name="urgency" required className="px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg">
-                  <option value="">Urgency</option>
-                  <option value="Immediate">Immediate</option>
-                  <option value="This Week">This Week</option>
-                  <option value="This Month">This Month</option>
-                </select>
-              </div>
-              <textarea
-                name="description"
-                rows={4}
-                placeholder="Provide more details about your request or offer..."
-                className="w-full px-6 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
-              />
-              <button type="submit" className="w-full bg-orange-500 text-white py-4 px-8 rounded-xl hover:bg-orange-600 transition-colors font-semibold text-lg">
-                Post Quick Interaction
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Join Network Modal */}
-      {showJoinModal && joiningsector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-2xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
-            <button 
-              onClick={() => {
-                setShowJoinModal(false);
-                setJoiningSector(null);
-              }}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            {(() => {
-              const sector = sectors.find(s => s.id === joiningsector);
-              if (!sector) return null;
-              const Icon = sector.icon;
-              
-              return (
-                <div>
-                  <div className="text-center mb-8">
-                    <div className={`${sector.color} p-6 rounded-2xl w-fit mx-auto mb-4`}>
-                      <Icon className="w-12 h-12 text-white" />
-                    </div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Join {sector.name} Network</h2>
-                    <p className="text-lg text-gray-600">{sector.description}</p>
-                  </div>
-                  
-                  <div className="bg-orange-50 p-6 rounded-xl mb-8">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">Network Benefits:</h3>
-                    <ul className="space-y-3 text-gray-700">
-                      <li className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span>Connect with {sector.ngoCount} NGOs in {sector.name}</span>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span>Access to sector-specific discussions and resources</span>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span>Collaboration opportunities with partner organizations</span>
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span>Priority access to sector events and training</span>
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <form className="space-y-6" onSubmit={(e) => {
-                    e.preventDefault();
-                    setJoinedSectors([...joinedSectors, joiningsector]);
-                    setShowJoinModal(false);
-                    setJoiningSector(null);
-                    alert(`Successfully joined ${sector.name} Network! You can now participate in discussions and access resources.`);
-                  }}>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Organization Name</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Enter your organization name"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Your Role</label>
-                      <select required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                        <option value="">Select your role</option>
-                        <option value="Director">Director/CEO</option>
-                        <option value="Program Manager">Program Manager</option>
-                        <option value="Project Coordinator">Project Coordinator</option>
-                        <option value="Field Officer">Field Officer</option>
-                        <option value="Volunteer">Volunteer</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Why do you want to join this network?</label>
-                      <textarea
-                        rows={4}
-                        required
-                        placeholder="Tell us about your interest in this sector and how you plan to contribute..."
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <input type="checkbox" id="terms" required className="w-5 h-5 text-orange-600" />
-                      <label htmlFor="terms" className="text-sm text-gray-700">
-                        I agree to the network guidelines and commit to active participation
-                      </label>
-                    </div>
-                    
-                    <button type="submit" className="w-full bg-orange-500 text-white py-4 px-8 rounded-xl hover:bg-orange-600 transition-colors font-semibold text-lg">
-                      Join Network
-                    </button>
-                  </form>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* New Sector Modal */}
-      {showNewSectorModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-2xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
-            <button 
-              onClick={() => setShowNewSectorModal(false)}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <div className="text-center mb-8">
-              <div className="bg-orange-500 p-6 rounded-2xl w-fit mx-auto mb-4">
-                <Plus className="w-12 h-12 text-white" />
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Join New Sector</h2>
-              <p className="text-lg text-gray-600">Request to join a sector that's not currently listed</p>
-            </div>
-            
-            <form className="space-y-6" onSubmit={(e) => {
-              e.preventDefault();
-              setShowNewSectorModal(false);
-              alert('Your request has been submitted! We will review and add the new sector soon.');
-            }}>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sector Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g., Rural Development, Disaster Relief, etc."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sector Description</label>
-                <textarea
-                  rows={4}
-                  required
-                  placeholder="Describe the focus and goals of this sector..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Your Organization</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enter your organization name"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Why is this sector needed?</label>
-                <textarea
-                  rows={4}
-                  required
-                  placeholder="Explain why this sector should be added and how it will benefit the NGO community..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              
-              <button type="submit" className="w-full bg-orange-500 text-white py-4 px-8 rounded-xl hover:bg-orange-600 transition-colors font-semibold text-lg">
-                Submit Request
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Preview Modal */}
-      {showPreviewModal && previewResource && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-4xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">
-            <button 
-              onClick={() => {
-                setShowPreviewModal(false);
-                setPreviewResource(null);
-              }}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            
-            <div className="mb-8">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="bg-orange-100 p-4 rounded-xl">
-                  <FileText className="w-8 h-8 text-orange-600" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900">{previewResource.title}</h2>
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-semibold">
-                      {previewResource.sector}
-                    </span>
-                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-semibold">
-                      {previewResource.type}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-6 mb-8">
-                <div className="text-center p-4 bg-gray-50 rounded-xl">
-                  <Download className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">{previewResource.downloads}</p>
-                  <p className="text-gray-600">Downloads</p>
-                </div>
-                <div className="text-center p-4 bg-gray-50 rounded-xl">
-                  <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">{previewResource.rating}</p>
-                  <p className="text-gray-600">Rating</p>
-                </div>
-                <div className="text-center p-4 bg-gray-50 rounded-xl">
-                  <Eye className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">156</p>
-                  <p className="text-gray-600">Views</p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Document Preview Area */}
-            <div className="bg-gray-100 rounded-xl p-8 mb-8 min-h-[400px]">
-              <div className="text-center">
-                <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Document Preview</h3>
-                <div className="bg-white p-6 rounded-lg shadow-sm text-left max-w-2xl mx-auto">
-                  <h4 className="text-lg font-semibold mb-4">{previewResource.title}</h4>
-                  <p className="text-gray-700 mb-4">
-                    This is a preview of the {previewResource.type.toLowerCase()} document. The content includes comprehensive information about {previewResource.sector.toLowerCase()} sector initiatives and best practices.
-                  </p>
-                  <div className="space-y-3 text-gray-600">
-                    <p>• Introduction to {previewResource.sector} sector challenges</p>
-                    <p>• Implementation strategies and methodologies</p>
-                    <p>• Case studies and success stories</p>
-                    <p>• Resource allocation and budget planning</p>
-                    <p>• Monitoring and evaluation frameworks</p>
-                    <p>• Collaboration opportunities with partner organizations</p>
-                  </div>
-                  <div className="mt-6 p-4 bg-orange-50 rounded-lg">
-                    <p className="text-sm text-orange-800">
-                      <strong>Note:</strong> This is a preview. Download the full document to access all content, detailed charts, and appendices.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex gap-4">
-              <button 
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = '#';
-                  link.download = `${previewResource.title.replace(/\s+/g, '_')}.pdf`;
-                  link.click();
-                  alert(`Downloaded: ${previewResource.title}`);
-                }}
-                className="flex-1 bg-orange-500 text-white py-4 px-8 rounded-xl hover:bg-orange-600 transition-colors font-semibold text-lg flex items-center justify-center gap-3"
-              >
-                <Download className="w-5 h-5" />
-                Download Full Document
-              </button>
-              <button 
-                onClick={() => {
-                  setShowPreviewModal(false);
-                  setPreviewResource(null);
-                }}
-                className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-lg"
-              >
-                Close Preview
-              </button>
-            </div>
           </div>
         </div>
       )}

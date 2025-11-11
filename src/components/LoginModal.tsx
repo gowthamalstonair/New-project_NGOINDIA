@@ -93,9 +93,9 @@ export function LoginModal({ onClose }: LoginModalProps) {
           <img
             src="/ngo india logo.png"
             alt="NGO INDIA Logo"
-            className="w-16 h-16 mx-auto mb-3 rounded-lg"
+            className="w-56 h-64 mx-auto mb-0 rounded-lg"
           />
-          <h2 className="text-2xl font-bold text-gray-900">NGO INDIA Portal</h2>
+          <h2 className="text-2xl font-bold text-gray-900 -mt-6">NGO INDIA Portal</h2>
           <p className="text-gray-600 text-sm">Empowering NGOs through digital innovation</p>
         </div>
  
@@ -166,21 +166,9 @@ export function LoginModal({ onClose }: LoginModalProps) {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-500"
-                      placeholder={selectedRole === 'Admin' ? 'admin@ngoindia.org' : 
-                                 selectedRole === 'Executive' ? 'executive@ngoindia.org' : 
-                                 selectedRole === 'Employee' ? 'employee@ngoindia.org' : 
-                                 selectedRole === 'Director' ? 'director@ngoindia.org' :
-                                 'Enter your email'}
+                      placeholder="Enter your email"
                       required
                     />
-                    {selectedRole && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Use {selectedRole === 'Admin' ? 'admin@ngoindia.org' : 
-                             selectedRole === 'Executive' ? 'executive@ngoindia.org' : 
-                             selectedRole === 'Employee' ? 'employee@ngoindia.org' : 
-                             selectedRole === 'Director' ? 'director@ngoindia.org' : ''} for {selectedRole} login (Password: ngoindia123)
-                      </p>
-                    )}
                   </div>
  
                   <div>

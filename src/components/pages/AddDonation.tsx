@@ -17,22 +17,44 @@ export function AddDonation() {
     e.preventDefault();
     
     try {
-      // Add donation to local context
-      addDonation({
-        donor: formData.donorName,
-        amount: parseFloat(formData.amount),
-        date: new Date().toISOString().split('T')[0],
-        type: formData.donationType === 'Grant' ? 'recurring' : 'one-time'
+      // Try to add donor to backend first
+      const response = await fetch('http://localhost/NGO-India/backend/add_donor_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.donorName,
+          email: formData.donorEmail,
+          amount: parseFloat(formData.amount),
+          donor_type: formData.donationType,
+          purpose: formData.purpose,
+          notes: formData.notes
+        })
       });
       
-      alert('Donation added successfully!');
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000);
+      const result = await response.json();
+      if (result.success) {
+        alert('Donor added successfully to database!');
+      } else {
+        console.log('Backend failed, using local storage:', result.message);
+      }
     } catch (error) {
-      console.error('Error adding donation:', error);
-      alert('Failed to add donation. Please try again.');
+      console.error('Backend error, using local storage:', error);
     }
+    
+    // Always add to local context as fallback
+    addDonation({
+      donor: formData.donorName,
+      amount: parseFloat(formData.amount),
+      date: new Date().toISOString().split('T')[0],
+      type: formData.donationType === 'Grant' ? 'recurring' : 'one-time'
+    });
+    
+    alert('Donation added successfully!');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
   };
 
   return (

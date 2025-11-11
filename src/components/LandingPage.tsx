@@ -54,19 +54,19 @@ export function LandingPage() {
     {
       name: 'Dr. Meera Gupta',
       role: 'Village Health Officer',
-      image: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
+      avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
       quote: 'The healthcare initiative has transformed our village. Children now have access to quality medical care and nutrition programs.'
     },
     {
       name: 'Ravi Kumar',
       role: 'School Principal',
-      image: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       quote: 'The education program has increased enrollment by 300%. Our students now have access to digital learning tools and qualified teachers.'
     },
     {
       name: 'Sunita Devi',
       role: 'Women\'s Group Leader',
-      image: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face',
       quote: 'The livelihood program helped us start our own business. We now have financial independence and can support our families.'
     }
   ];
@@ -103,19 +103,19 @@ export function LandingPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center md:justify-between h-auto md:h-16 py-2 md:py-0">
-            <div className="flex items-start md:items-center md:justify-start gap-3 w-full md:w-auto mb-2 md:mb-0">
+          <div className="flex flex-col md:flex-row items-center md:justify-between h-auto md:h-20 py-2 md:py-2">
+            <div className="flex items-center md:justify-start gap-3 w-full md:w-auto mb-2 md:mb-0">
               <img 
                 src="/ngo india logo.png" 
                 alt="NGO INDIA Logo" 
-                className="w-40 h-28 rounded-lg cursor-pointer" 
+                className="w-40 h-32 rounded-lg cursor-pointer mt-4" 
                 onClick={() => window.location.href = '/'}
               />
             </div>
             <nav className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-8 w-full md:w-auto justify-center md:justify-start mb-2 md:mb-0">
               <a href="#about-ngo" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">About</a>
               <a href="#projects" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Projects</a>
-              <a href="/campaigns" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Campaigns</a>
+              <a href="#campaigns" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Campaigns</a>
               <a href="#membership" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Membership</a>
               <a href="#impact" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Impact</a>
               <a href="#contact" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Contact</a>
@@ -293,17 +293,45 @@ export function LandingPage() {
               return (
                 <motion.div
                   key={index}
-                  className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                  className="overflow-hidden"
                   initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <div className="bg-orange-50 p-3 rounded-lg w-fit mb-6">
-                    <Icon className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                  {feature.title === 'Community Impact' ? (
+                    <>
+                      <img src="https://images.pexels.com/photos/6994982/pexels-photo-6994982.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Community Impact" className="w-full h-64 object-cover rounded-lg" />
+                      <div className="mt-4">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
+                        <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                      </div>
+                    </>
+                  ) : feature.title === 'Collaborative Network' ? (
+                    <>
+                      <img src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Collaborative Network" className="w-full h-64 object-cover rounded-lg" />
+                      <div className="mt-4">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
+                        <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                      </div>
+                    </>
+                  ) : feature.title === 'Data-Driven Approach' ? (
+                    <>
+                      <img src="https://images.pexels.com/photos/590020/pexels-photo-590020.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Data-Driven Approach" className="w-full h-64 object-cover rounded-lg" />
+                      <div className="mt-4">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
+                        <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <img src="https://images.pexels.com/photos/6646918/pexels-photo-6646918.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Transparent Operations" className="w-full h-64 object-cover rounded-lg" />
+                      <div className="mt-4">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
+                        <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               );
             })}
@@ -314,41 +342,58 @@ export function LandingPage() {
       {/* About NGO Section */}
       <section id="about-ngo" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">About NGO INDIA</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              NGO INDIA is dedicated to transforming lives in rural India through education, healthcare, and sustainable development. Our mission is to empower communities, foster self-reliance, and create lasting change by combining traditional values with modern solutions. We believe in transparency, accountability, and measurable impact, ensuring every contribution makes a real difference.
-            </p>
+          <div className="text-center mb-12 relative bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-8 overflow-hidden">
+            {/* Transparent Background Image */}
+            <div className="absolute inset-0 opacity-10">
+              <img src="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=800&h=400&dpr=1" alt="" className="w-full h-full object-cover" />
+            </div>
+            
+            {/* Content */}
+            <div className="relative z-10 text-white">
+              <h2 className="text-4xl font-bold mb-4">About NGO INDIA</h2>
+              <p className="text-xl opacity-90 max-w-3xl mx-auto">
+                NGO INDIA is dedicated to transforming lives in rural India through education, healthcare, and sustainable development. Our mission is to empower communities, foster self-reliance, and create lasting change by combining traditional values with modern solutions. We believe in transparency, accountability, and measurable impact, ensuring every contribution makes a real difference.
+              </p>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-orange-50 p-8 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="text-2xl font-semibold text-orange-600 mb-3">Our Vision</h3>
-              <p className="text-gray-700 leading-relaxed">
-                To create a just, equitable, and sustainable society where every individual has access to quality education, healthcare, and opportunities for growth.
-              </p>
+            <div className="overflow-hidden">
+              <img src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Our Vision" className="w-full h-64 object-cover rounded-lg" />
+              <div className="mt-4">
+                <h3 className="text-2xl font-semibold text-orange-600 mb-3">Our Vision</h3>
+                <p className="text-gray-700 leading-relaxed">
+                  To create a just, equitable, and sustainable society where every individual has access to quality education, healthcare, and opportunities for growth.
+                </p>
+              </div>
             </div>
-            <div className="bg-orange-50 p-8 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="text-2xl font-semibold text-orange-600 mb-3">Our Mission</h3>
-              <p className="text-gray-700 leading-relaxed">
-                To empower marginalized communities by providing resources, building capacity, and fostering partnerships that drive holistic development and social change.
-              </p>
+            <div className="overflow-hidden">
+              <img src="https://images.pexels.com/photos/3184430/pexels-photo-3184430.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Our Mission" className="w-full h-64 object-cover rounded-lg" />
+              <div className="mt-4">
+                <h3 className="text-2xl font-semibold text-orange-600 mb-3">Our Mission</h3>
+                <p className="text-gray-700 leading-relaxed">
+                  To empower marginalized communities by providing resources, building capacity, and fostering partnerships that drive holistic development and social change.
+                </p>
+              </div>
             </div>
-            <div className="bg-orange-50 p-8 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="text-2xl font-semibold text-orange-600 mb-3">Our Values</h3>
-              <ul className="list-disc list-inside text-gray-700">
-                <li>Transparency & Accountability</li>
-                <li>Inclusivity & Respect</li>
-                <li>Innovation & Collaboration</li>
-                <li>Community Empowerment</li>
-                <li>Sustainable Impact</li>
-              </ul>
+            <div className="overflow-hidden">
+              <img src="https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Our Values" className="w-full h-64 object-cover rounded-lg" />
+              <div className="mt-4">
+                <h3 className="text-2xl font-semibold text-orange-600 mb-3">Our Values</h3>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  <li>Transparency & Accountability</li>
+                  <li>Inclusivity & Respect</li>
+                  <li>Innovation & Collaboration</li>
+                  <li>Community Empowerment</li>
+                  <li>Sustainable Impact</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Featured Campaigns Section */}
-      <section className="py-20 bg-gradient-to-br from-orange-50 to-yellow-50">
+      <section id="campaigns" className="py-20 bg-gradient-to-br from-orange-50 to-yellow-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Fundraising Campaigns</h2>
@@ -529,7 +574,7 @@ export function LandingPage() {
             {projects.map((project, index) => (
               <motion.div
                 key={index}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+                className="overflow-hidden"
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -538,9 +583,9 @@ export function LandingPage() {
                 <img
                   src={project.image}
                   alt={project.title}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-64 object-cover rounded-lg"
                 />
-                <div className="p-6">
+                <div className="mt-4">
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">{project.title}</h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">{project.description}</p>
                   
@@ -660,28 +705,28 @@ export function LandingPage() {
           
           {/* Membership Benefits */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-8 rounded-xl text-center">
-              <div className="bg-orange-500 p-4 rounded-full w-16 h-16 mx-auto mb-6 flex items-center justify-center">
-                <Users className="w-8 h-8 text-white" />
+            <div className="overflow-hidden text-center">
+              <img src="https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Community Access" className="w-full h-64 object-cover rounded-lg" />
+              <div className="mt-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Community Access</h3>
+                <p className="text-gray-700">Connect with like-minded individuals and participate in exclusive member events and activities.</p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Community Access</h3>
-              <p className="text-gray-700">Connect with like-minded individuals and participate in exclusive member events and activities.</p>
             </div>
             
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl text-center">
-              <div className="bg-blue-500 p-4 rounded-full w-16 h-16 mx-auto mb-6 flex items-center justify-center">
-                <Shield className="w-8 h-8 text-white" />
+            <div className="overflow-hidden text-center">
+              <img src="https://images.pexels.com/photos/669615/pexels-photo-669615.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Impact Transparency" className="w-full h-64 object-cover rounded-lg" />
+              <div className="mt-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Impact Transparency</h3>
+                <p className="text-gray-700">Receive detailed reports on how your contributions are making a difference in communities.</p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Impact Transparency</h3>
-              <p className="text-gray-700">Receive detailed reports on how your contributions are making a difference in communities.</p>
             </div>
             
-            <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl text-center">
-              <div className="bg-green-500 p-4 rounded-full w-16 h-16 mx-auto mb-6 flex items-center justify-center">
-                <Award className="w-8 h-8 text-white" />
+            <div className="overflow-hidden text-center">
+              <img src="https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&dpr=1" alt="Recognition & Rewards" className="w-full h-64 object-cover rounded-lg" />
+              <div className="mt-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Recognition & Rewards</h3>
+                <p className="text-gray-700">Get recognized for your contributions and receive exclusive member rewards and certificates.</p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Recognition & Rewards</h3>
-              <p className="text-gray-700">Get recognized for your contributions and receive exclusive member rewards and certificates.</p>
             </div>
           </div>
           
@@ -730,7 +775,7 @@ export function LandingPage() {
               </div>
               <div className="relative">
                 <img
-                  src="https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1"
+                  src="https://images.pexels.com/photos/3184306/pexels-photo-3184306.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1"
                   alt="Community Members"
                   className="w-full h-full object-cover"
                 />
@@ -754,12 +799,12 @@ export function LandingPage() {
             </p>
             <div className="flex items-center justify-center gap-4">
               <img
-                src="https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&dpr=1"
-                alt="Priya Sharma"
+                src="https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&dpr=1"
+                alt="Anita Desai"
                 className="w-12 h-12 rounded-full object-cover"
               />
               <div className="text-left">
-                <h4 className="font-semibold text-gray-900">Priya Sharma</h4>
+                <h4 className="font-semibold text-gray-900">Anita Desai</h4>
                 <p className="text-sm text-orange-600">Champion Member</p>
               </div>
             </div>
@@ -777,7 +822,7 @@ export function LandingPage() {
             </p>
           </div>
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -803,7 +848,7 @@ export function LandingPage() {
                 <p className="text-gray-700 mb-6 leading-relaxed italic">"{testimonial.quote}"</p>
                 <div className="flex items-center gap-4">
                   <img
-                    src={testimonial.image}
+                    src={testimonial.avatar}
                     alt={testimonial.name}
                     className="w-12 h-12 rounded-full object-cover"
                   />
@@ -865,7 +910,7 @@ export function LandingPage() {
                 <img 
                   src="/ngo india logo.png" 
                   alt="NGO INDIA Logo" 
-                  className="w-40 h-30 rounded-lg cursor-pointer" 
+                  className="w-48 h-32 rounded-lg cursor-pointer" 
                   onClick={() => window.location.href = '/'}
                 />
                 {/* Removed text logo, keep only image */}
@@ -910,9 +955,9 @@ export function LandingPage() {
                   <Phone className="w-5 h-5 text-orange-500" />
                   <a href="/enquiry" className="text-gray-400 hover:text-white transition-colors">+91 8068447416</a>
                 </div>
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-orange-500" />
-                  <span className="text-gray-400">Bengaluru, India</span>
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-orange-500 flex-shrink-0 mt-1" />
+                  <span className="text-gray-400">MCECHS Layout KV Jayaram Road, Jakkur Rd, MCECHS Layout Phase 2, Bengaluru, Karnataka 560064</span>
                 </div>
               </div>
               

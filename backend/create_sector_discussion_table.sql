@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS sector_discussion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(100) NOT NULL,
+    sector VARCHAR(100) NOT NULL,
+    content TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    likes INT DEFAULT 0,
+    replies INT DEFAULT 0,
+    is_pinned BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

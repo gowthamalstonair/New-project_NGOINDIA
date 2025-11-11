@@ -20,6 +20,8 @@ import { KnowledgeHub } from './KnowledgeHub';
 import { MOUTemplates } from './modules/MOUTemplates';
 import { PartnerNetwork } from './modules/PartnerNetwork';
 import { GrantApplicationPage } from '../pages/GrantApplicationPage';
+import { CSRModule } from './modules/CSRModule';
+import { SectorNetworks } from './modules/SectorNetworks';
 
 
  
@@ -42,7 +44,9 @@ export type ActiveModule =
   | 'knowledge'
   | 'mou-templates'
   | 'partner-network'
-  | 'grant-applications';
+  | 'grant-applications'
+  | 'csr'
+  | 'sector-networks';
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -122,6 +126,10 @@ export function Dashboard() {
         return <PartnerNetwork />;
       case 'grant-applications':
         return <GrantApplicationPage />;
+      case 'csr':
+        return <CSRModule />;
+      case 'sector-networks':
+        return <SectorNetworks />;
       default:
         return <div className="p-8 text-center text-gray-500">Module under development</div>;
     }

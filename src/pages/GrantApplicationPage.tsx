@@ -12,13 +12,57 @@ export function GrantApplicationPage() {
   const [applications, setApplications] = useState<GrantApplication[]>([]);
   const [selectedApplication, setSelectedApplication] = useState<GrantApplication | null>(null);
 
-  // Load applications from localStorage on component mount
+  // Load applications from database and localStorage on component mount
   useEffect(() => {
-    const stored = localStorage.getItem('grant_applications');
-    if (stored) {
-      setApplications(JSON.parse(stored));
-    }
+    loadApplications();
   }, []);
+
+  const loadApplications = async () => {
+    try {
+      // Load from database first
+      const response = await fetch('http://localhost/NGO-India/backend/get_grant_applications_api.php');
+      const data = await response.json();
+      
+      let dbApplications = [];
+      if (data.success) {
+        // Convert database format to frontend format
+        dbApplications = data.applications.map((app: any) => ({
+          id: app.id.toString(),
+          applicantName: app.applicant_name,
+          applicantEmail: app.applicant_email,
+          applicantPhone: app.applicant_phone,
+          organizationName: app.organization_name,
+          projectTitle: app.project_title,
+          projectDescription: app.project_description,
+          requestedAmount: parseFloat(app.requested_amount),
+          projectDuration: app.project_duration,
+          category: app.category,
+          status: app.status,
+          submissionDate: app.created_at,
+          createdBy: 'database'
+        }));
+      }
+      
+      // Load from localStorage as backup
+      const stored = localStorage.getItem('grant_applications');
+      const localApplications = stored ? JSON.parse(stored) : [];
+      
+      // Combine and remove duplicates
+      const allApplications = [...dbApplications, ...localApplications];
+      const uniqueApplications = allApplications.filter((app, index, arr) => 
+        arr.findIndex(item => item.id === app.id) === index
+      );
+      
+      setApplications(uniqueApplications);
+    } catch (error) {
+      console.error('Failed to load applications:', error);
+      // Fallback to localStorage only
+      const stored = localStorage.getItem('grant_applications');
+      if (stored) {
+        setApplications(JSON.parse(stored));
+      }
+    }
+  };
 
   // Save applications to localStorage whenever applications change
   useEffect(() => {
@@ -27,6 +71,37 @@ export function GrantApplicationPage() {
 
   const handleSubmitApplication = async (formData: GrantApplicationFormData): Promise<boolean> => {
     try {
+      // Submit to database first
+      const response = await fetch('http://localhost/NGO-India/backend/add_grant_application_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      const result = await response.json();
+      
+      const newApplication: GrantApplication = {
+        id: result.id?.toString() || Date.now().toString(),
+        ...formData,
+        submissionDate: new Date().toISOString(),
+        status: 'submitted',
+        createdBy: user?.id || 'anonymous'
+      };
+
+      // Add to local state and localStorage
+      setApplications(prev => [newApplication, ...prev]);
+      
+      // Also save to localStorage as backup
+      const existingLocal = JSON.parse(localStorage.getItem('grant_applications') || '[]');
+      existingLocal.unshift(newApplication);
+      localStorage.setItem('grant_applications', JSON.stringify(existingLocal));
+      
+      return true;
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      
+      // Fallback: save to localStorage only
       const newApplication: GrantApplication = {
         id: Date.now().toString(),
         ...formData,
@@ -34,12 +109,9 @@ export function GrantApplicationPage() {
         status: 'submitted',
         createdBy: user?.id || 'anonymous'
       };
-
+      
       setApplications(prev => [newApplication, ...prev]);
       return true;
-    } catch (error) {
-      console.error('Error submitting application:', error);
-      return false;
     }
   };
 
@@ -68,6 +140,15 @@ export function GrantApplicationPage() {
       <GrantApplicationForm
         onBack={handleBack}
         onSubmit={handleSubmitApplication}
+        onRefreshApplications={loadApplications}
+        onMyApplications={() => {
+          window.history.pushState({}, '', '/my-applications');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }}
+        onBrowseGrants={() => {
+          window.history.pushState({}, '', '/browse-grants');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }}
       />
     );
   }

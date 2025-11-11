@@ -33,6 +33,8 @@ import { MembershipPage } from './components/pages/MembershipPage';
 import { MembershipDashboard } from './components/pages/MembershipDashboard';
 import { JoinMembershipPage } from './components/pages/JoinMembershipPage';
 import { PartnerNetworkPage } from './pages/PartnerNetworkPage';
+import { MyApplications } from './components/pages/MyApplications';
+import { BrowseGrants } from './components/pages/BrowseGrants';
 
 import { AddEmployee } from './components/pages/AddEmployee';
 import StaffProfile from './components/pages/StaffProfile';
@@ -190,6 +192,25 @@ if (currentPage === '/performance-review-details') {
 }
 if (currentPage === '/partner-network') {
   return <PartnerNetworkPage />;
+}
+if (currentPage === '/my-applications') {
+  return (
+    <DashboardProvider>
+      <MyApplications 
+        applications={[]}
+        onViewDetails={() => {}}
+        onEditApplication={() => {}}
+        onDeleteApplication={() => {}}
+      />
+    </DashboardProvider>
+  );
+}
+if (currentPage === '/browse-grants') {
+  return (
+    <DashboardProvider>
+      <BrowseGrants onApplyToGrant={() => {}} />
+    </DashboardProvider>
+  );
 }
 
 

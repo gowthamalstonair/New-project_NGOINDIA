@@ -140,8 +140,9 @@ class ApiService {
   // Donation endpoints
   async getDonations(params = {}) {
     try {
-      const queryString = new URLSearchParams(params).toString();
-      return this.request(`/donations/?${queryString}`);
+      const response = await fetch('http://localhost/NGO-India/backend/get_fcradonation_api.php');
+      const data = await response.json();
+      return data;
     } catch (error) {
       // Fallback to localStorage
       const donations = JSON.parse(localStorage.getItem('fcra_donations') || '[]');
@@ -151,10 +152,15 @@ class ApiService {
 
   async createDonation(data) {
     try {
-      return this.request('/donations/', {
+      const response = await fetch('http://localhost/NGO-India/backend/add_fcradonation_api.php', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
       });
+      const result = await response.json();
+      return result;
     } catch (error) {
       // Fallback to localStorage
       const donations = JSON.parse(localStorage.getItem('fcra_donations') || '[]');

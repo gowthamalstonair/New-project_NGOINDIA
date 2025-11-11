@@ -183,6 +183,39 @@ export function CreateProject({ onBack }: { onBack: () => void }) {
             Cancel
           </button>
           <button
+            onClick={async () => {
+              if (!name || !description || !purpose || !amount) {
+                alert('Please fill all fields');
+                return;
+              }
+              
+              try {
+                const response = await fetch('http://localhost/NGO-India/backend/add_project_api.php', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    name,
+                    description,
+                    purpose,
+                    amount,
+                    budget_allocation: JSON.stringify(recommendations)
+                  })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                  alert('Project created successfully!');
+                  onBack();
+                } else {
+                  alert('Error creating project: ' + result.message);
+                }
+              } catch (error) {
+                console.error('Error:', error);
+                alert('Error creating project');
+              }
+            }}
             className="px-6 py-3 rounded-lg bg-orange-500 text-white hover:bg-orange-600 font-semibold shadow-md hover:shadow-lg transition-all"
           >
             Create Project

@@ -190,8 +190,7 @@ export function JoinPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-start gap-3">
-              <img src="/ngo india logo.png" alt="NGO INDIA Logo" className="w-10 h-10 rounded-lg" />
-              {/* Removed text logo, keep only image */}
+              <img src="/ngo india logo.png" alt="NGO INDIA Logo" className="w-40 h-32 rounded-lg mt-4" />
             </div>
             <button
               onClick={() => window.location.href = '/'}

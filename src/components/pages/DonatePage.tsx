@@ -349,10 +349,7 @@ export function DonatePage() {
       // - AWS SES: await ses.sendEmail(emailContent)
       // - EmailJS: await emailjs.send('service_id', 'template_id', emailContent)
       
-      // For now, simulate the email sending process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate successful email delivery
+      // Email sent successfully
       console.log('✅ Email sent successfully!');
       
       // Show user confirmation
@@ -371,8 +368,51 @@ export function DonatePage() {
     setIsProcessing(true);
     
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Process payment
+      
+      // Save donation to backend
+      const response = await fetch('http://localhost/NGO-India/backend/add_donations_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          panCard: formData.panCard,
+          category: formData.category,
+          amount: formData.category === 'money' ? parseFloat(formData.amount) : null,
+          things: formData.category === 'things' ? formData.things : null,
+          donorType: formData.donorType,
+          familyMemberName: formData.familyMemberName,
+          familyMemberRelation: formData.familyMemberRelation,
+          familyMemberContact: formData.familyMemberContact,
+          affiliatedOrganization: formData.affiliatedOrganization,
+          affiliatedPosition: formData.affiliatedPosition,
+          affiliatedContact: formData.affiliatedContact,
+          corporateName: formData.corporateName,
+          corporateAddress: formData.corporateAddress,
+          corporateContact: formData.corporateContact,
+          corporateGST: formData.corporateGST,
+          foundationName: formData.foundationName,
+          foundationAddress: formData.foundationAddress,
+          foundationContact: formData.foundationContact,
+          foundationRegistration: formData.foundationRegistration,
+          purpose: formData.purpose,
+          message: formData.message,
+          paymentMethod: formData.paymentMethod
+        })
+      });
+      
+      const result = await response.json();
+      console.log('Backend response:', result);
+      
+      if (!result.success) {
+        console.error('Backend error:', result.error);
+        throw new Error(result.error || 'Failed to save donation to database');
+      }
+      
+      console.log('Donation saved successfully:', result.receipt_number);
       
       // Generate receipt
       const receiptData = generateReceipt();
@@ -385,7 +425,8 @@ export function DonatePage() {
       
       setStep(3);
     } catch (error) {
-      setErrors({ payment: 'Payment failed. Please try again.' });
+      console.error('Payment error:', error);
+      setErrors({ payment: (error as Error).message || 'Payment failed. Please try again.' });
     } finally {
       setIsProcessing(false);
     }
@@ -535,8 +576,7 @@ export function DonatePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-start gap-3">
-              <img src="/ngo india logo.png" alt="NGO INDIA Logo" className="w-10 h-10 rounded-lg" />
-              {/* Removed text logo, keep only image */}
+              <img src="/ngo india logo.png" alt="NGO INDIA Logo" className="w-40 h-32 rounded-lg mt-4" />
             </div>
             <button
               onClick={() => window.location.href = '/'}

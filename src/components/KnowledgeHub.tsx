@@ -83,13 +83,33 @@ export function KnowledgeHub() {
 
   // Initialize documents from localStorage or use default data
   useEffect(() => {
-    const saved = localStorage.getItem('ngoDocuments');
-    if (saved) {
-      setDocuments(JSON.parse(saved));
-    } else {
-      setDocuments(initialDocuments);
-    }
+    fetchDocuments();
   }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_documents_api.php');
+      const result = await response.json();
+      if (result.success && result.documents.length > 0) {
+        setDocuments(result.documents);
+      } else {
+        const saved = localStorage.getItem('ngoDocuments');
+        if (saved) {
+          setDocuments(JSON.parse(saved));
+        } else {
+          setDocuments(initialDocuments);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      const saved = localStorage.getItem('ngoDocuments');
+      if (saved) {
+        setDocuments(JSON.parse(saved));
+      } else {
+        setDocuments(initialDocuments);
+      }
+    }
+  };
 
   // Curated NGO document seeds (replace href with actual report links when integrating)
   const initialDocuments: NGODocument[] = [
@@ -366,34 +386,67 @@ export function KnowledgeHub() {
     setCalculatedPages(mockPages);
   };
 
-  const handleAddDocument = (formData: any) => {
+  const handleAddDocument = async (formData: any) => {
     const fileSize = uploadedFile ? `${(uploadedFile.size / (1024 * 1024)).toFixed(1)} MB` : '2.5 MB';
     
-    const newDoc: NGODocument & { content?: string } = {
-      id: Date.now().toString(),
-      title: formData.title,
-      ngoName: formData.ngoName,
-      category: formData.category,
-      type: formData.type,
-      size: fileSize,
-      pages: calculatedPages || 50,
-      uploadDate: new Date().toISOString().split('T')[0],
-      downloads: 0,
-      views: 0,
-      image: formData.image || fallbackImg,
-      description: formData.description,
-      tags: formData.tags.split(',').map((tag: string) => tag.trim()),
-      href: '#',
-      content: `This ${formData.type.toLowerCase()} from ${formData.ngoName} provides comprehensive information about ${formData.description}. The document contains ${calculatedPages || 50} pages of detailed analysis and insights.`
-    };
-    
-    const updatedDocs = [newDoc, ...documents];
-    setDocuments(updatedDocs);
-    localStorage.setItem('ngoDocuments', JSON.stringify(updatedDocs));
-    setShowAddModal(false);
-    setUploadedFile(null);
-    setCalculatedPages(0);
-    alert('Document added successfully!');
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/add_document_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          ngo_name: formData.ngoName,
+          category: formData.category,
+          type: formData.type,
+          size: fileSize,
+          pages: calculatedPages || 50,
+          description: formData.description,
+          tags: formData.tags,
+          image: formData.image || fallbackImg
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        fetchDocuments(); // Refresh documents list
+        setShowAddModal(false);
+        setUploadedFile(null);
+        setCalculatedPages(0);
+        alert('Document added successfully!');
+      } else {
+        alert('Error adding document: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Error adding document:', error);
+      // Fallback to local storage
+      const newDoc: NGODocument & { content?: string } = {
+        id: Date.now().toString(),
+        title: formData.title,
+        ngoName: formData.ngoName,
+        category: formData.category,
+        type: formData.type,
+        size: fileSize,
+        pages: calculatedPages || 50,
+        uploadDate: new Date().toISOString().split('T')[0],
+        downloads: 0,
+        views: 0,
+        image: formData.image || fallbackImg,
+        description: formData.description,
+        tags: formData.tags.split(',').map((tag: string) => tag.trim()),
+        href: '#',
+        content: `This ${formData.type.toLowerCase()} from ${formData.ngoName} provides comprehensive information about ${formData.description}. The document contains ${calculatedPages || 50} pages of detailed analysis and insights.`
+      };
+      
+      const updatedDocs = [newDoc, ...documents];
+      setDocuments(updatedDocs);
+      localStorage.setItem('ngoDocuments', JSON.stringify(updatedDocs));
+      setShowAddModal(false);
+      setUploadedFile(null);
+      setCalculatedPages(0);
+      alert('Document added successfully!');
+    }
   };
 
   // Show document viewer if a document is selected

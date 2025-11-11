@@ -4,6 +4,7 @@ import { Donation } from '../types/donation';
 import { convertToINR } from '../utils/fcraHelpers';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboard } from '../contexts/DashboardContext';
+// @ts-ignore
 import api from '../utils/api';
 
 interface FcraDonationFormProps {
@@ -95,7 +96,7 @@ export function FcraDonationForm({ onBack, editingDonation }: FcraDonationFormPr
     }));
   };
 
-  const canEditFIRC = user?.role === 'admin' || user?.role === 'finance';
+  const canEditFIRC = user?.role === 'admin' || user?.role === 'director';
 
   return (
     <div className="p-8 max-w-4xl mx-auto">

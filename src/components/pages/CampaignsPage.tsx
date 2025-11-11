@@ -8,23 +8,72 @@ export function CampaignsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [stats, setStats] = useState({ totalCampaigns: 0, totalRaised: 0, totalDonors: 0, activeCampaigns: 0 });
-
-  useEffect(() => {
-    // Force refresh to get latest data
-    const loadedStats = getStats();
-    setStats(loadedStats);
-  }, []);
-
-  // Get campaigns from campaignData.ts and refresh when page loads
   const [activeCampaigns, setActiveCampaigns] = useState<Campaign[]>([]);
-  
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const loadCampaigns = () => {
-      const campaigns = getCampaigns();
-      setActiveCampaigns(campaigns);
+    const loadCampaigns = async () => {
+      try {
+        // Try to fetch from backend first
+        const response = await fetch('http://localhost/NGO-India/backend/get_campaigns_api.php');
+        const result = await response.json();
+        
+        if (result.success && result.campaigns) {
+          // Convert backend data to frontend format
+          const backendCampaigns = result.campaigns.map((campaign: any) => ({
+            id: campaign.id,
+            title: campaign.title,
+            description: campaign.description,
+            fullStory: campaign.full_story,
+            goal: parseFloat(campaign.goal),
+            raised: parseFloat(campaign.raised || 0),
+            category: campaign.category,
+            daysLeft: campaign.daysLeft,
+            organizerName: campaign.organizer_name,
+            organizerEmail: campaign.organizer_email,
+            organizerPhone: campaign.organizer_phone,
+            image: campaign.image_url,
+            status: 'active',
+            donors: Math.floor(parseFloat(campaign.raised || 0) / 500) // Estimate donors
+          }));
+          
+          // Get existing campaigns from local storage
+          const localCampaigns = getCampaigns();
+          
+          // Combine both sources
+          const allCampaigns = [...backendCampaigns, ...localCampaigns];
+          setActiveCampaigns(allCampaigns);
+        } else {
+          // Fallback to local storage only
+          const localCampaigns = getCampaigns();
+          setActiveCampaigns(localCampaigns);
+        }
+      } catch (error) {
+        console.error('Error loading campaigns:', error);
+        // Fallback to local storage
+        const localCampaigns = getCampaigns();
+        setActiveCampaigns(localCampaigns);
+      } finally {
+        setLoading(false);
+      }
     };
+    
     loadCampaigns();
   }, []);
+
+  useEffect(() => {
+    // Calculate stats from loaded campaigns
+    const totalRaised = activeCampaigns.reduce((sum, c) => sum + c.raised, 0);
+    const totalDonors = activeCampaigns.reduce((sum, c) => sum + c.donors, 0);
+    const activeCampaignsCount = activeCampaigns.filter(c => c.status === 'active').length;
+    
+    setStats({
+      totalCampaigns: activeCampaigns.length,
+      totalRaised,
+      totalDonors,
+      activeCampaigns: activeCampaignsCount
+    });
+  }, [activeCampaigns]);
 
   const categories = [
     { id: 'all', name: 'All Categories'},
@@ -66,9 +115,9 @@ export function CampaignsPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
-              <img src="/ngo india logo.png" alt="NGO INDIA Logo" className="w-10 h-10 rounded-lg" />
+              <img src="/ngo india logo.png" alt="NGO INDIA Logo" className="w-56 h-32 rounded-lg cursor-pointer mt-4" onClick={() => window.location.href = '/'} />
             </div>
             <button
               onClick={() => window.location.href = '/'}
@@ -166,9 +215,18 @@ export function CampaignsPage() {
           </div>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading campaigns...</p>
+          </div>
+        )}
+
         {/* Campaigns Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCampaigns.map((campaign) => {
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredCampaigns.map((campaign) => {
             const progressPercentage = getProgressPercentage(campaign.raised, campaign.goal);
             const fallbackImage = getCategoryImage(campaign.category);
             
@@ -237,11 +295,12 @@ export function CampaignsPage() {
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
-        {filteredCampaigns.length === 0 && (
+        {!loading && filteredCampaigns.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">🔍</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No campaigns found</h3>

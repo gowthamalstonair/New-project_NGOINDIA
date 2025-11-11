@@ -26,7 +26,7 @@ export function CollaborationHub() {
       description: 'Providing nutritious meals to school children across India',
       avatar: 'https://images.pexels.com/photos/6646917/pexels-photo-6646917.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1',
       verified: true,
-      whatsapp: '919876543210' // Example number
+      whatsapp: '919876543210'
     },
     {
       id: '2',
@@ -178,14 +178,11 @@ export function CollaborationHub() {
     }
   ];
 
-  // WhatsApp redirect function
   const openWhatsApp = (ngo: any) => {
     window.location.href = `/whatsapp-communication?ngo=${ngo.id}&name=${encodeURIComponent(ngo.name)}`;
   };
 
-  // Download function
   const downloadResource = (resource: any) => {
-    // Create PDF content
     const pdfContent = `
 ${resource.title}
 
@@ -204,7 +201,6 @@ For more information, please contact the sharing organization.
 Generated on: ${new Date().toLocaleDateString()}
     `;
     
-    // Create blob and download
     const blob = new Blob([pdfContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -304,7 +300,6 @@ Generated on: ${new Date().toLocaleDateString()}
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -321,7 +316,6 @@ Generated on: ${new Date().toLocaleDateString()}
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -332,20 +326,8 @@ Generated on: ${new Date().toLocaleDateString()}
               onClick={() => {
                 if (stat.label === 'Resources Shared') {
                   setActiveTab('resources');
-                  setTimeout(() => {
-                    const element = document.getElementById('section-resources');
-                    if (element) {
-                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }, 100);
                 } else if (stat.label === 'Success Stories') {
                   setActiveTab('stories');
-                  setTimeout(() => {
-                    const element = document.getElementById('section-stories');
-                    if (element) {
-                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }, 100);
                 }
               }}
             >
@@ -363,7 +345,6 @@ Generated on: ${new Date().toLocaleDateString()}
         })}
       </div>
 
-      {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="border-b border-gray-200">
           <div className="flex">
@@ -377,15 +358,7 @@ Generated on: ${new Date().toLocaleDateString()}
               return (
                 <button
                   key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setTimeout(() => {
-                      const element = document.getElementById(`section-${tab.id}`);
-                      if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }, 100);
-                  }}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-colors ${
                     activeTab === tab.id
                       ? 'border-b-2 border-orange-500 text-orange-600'
@@ -401,9 +374,9 @@ Generated on: ${new Date().toLocaleDateString()}
         </div>
         
         <div className="p-6">
-          {activeTab === 'network' && <div id="section-network">{renderNetworkTab()}</div>}
+          {activeTab === 'network' && renderNetworkTab()}
           {activeTab === 'stories' && (
-            <div id="section-stories" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {successStories.map((story) => (
                 <div key={story.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                   <img
@@ -436,7 +409,7 @@ Generated on: ${new Date().toLocaleDateString()}
             </div>
           )}
           {activeTab === 'events' && (
-            <div id="section-events" className="space-y-4">
+            <div className="space-y-4">
               {upcomingEvents.map((event) => (
                 <div key={event.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                   <div className="flex items-start justify-between">
@@ -476,7 +449,7 @@ Generated on: ${new Date().toLocaleDateString()}
             </div>
           )}
           {activeTab === 'resources' && (
-            <div id="section-resources" className="space-y-4">
+            <div className="space-y-4">
               {resources.map((resource) => (
                 <div key={resource.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                   <div className="flex items-start justify-between">

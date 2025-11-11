@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   IndianRupee, TrendingUp, TrendingDown, PieChart, 
   Plus, Download, Calendar, Filter, AlertCircle,
@@ -13,9 +13,30 @@ export function FinancialTracking() {
   const { donations, expenses, addExpense } = useDashboard();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [dbExpenses, setDbExpenses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  const fetchExpenses = async () => {
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_expenses_api.php');
+      const result = await response.json();
+      if (result.success) {
+        setDbExpenses(result.expenses);
+      }
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const allExpenses = [...expenses, ...dbExpenses];
   const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalExpenses = allExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
   const netBalance = totalDonations - totalExpenses;
   const burnRate = totalExpenses / 30; // Daily burn rate
 

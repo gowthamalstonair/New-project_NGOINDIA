@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Network, Plus, Search, Filter, Mail, Phone, 
   MapPin, Globe, Building, Users, Star, Edit, Trash2
@@ -18,7 +18,6 @@ export function PartnerNetwork() {
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
 
-  // Mock data - in real app this would come from API
   const [partners, setPartners] = useState<Partner[]>([
     {
       id: '1',
@@ -76,27 +75,25 @@ export function PartnerNetwork() {
       established: '2012',
       status: 'active',
       projects: ['Education for All', 'Digital Literacy']
-    },
-    {
-      id: '4',
-      name: 'Global Health Initiative',
-      level: 'international',
-      location: {
-        address: 'Geneva, Switzerland',
-        country: 'Switzerland',
-        region: 'Global'
-      },
-      contact: {
-        email: 'partnerships@ghi.org',
-        phone: '+41 22 791 2111'
-      },
-      description: 'International partnership for global health and wellness programs.',
-      website: 'www.ghi.org',
-      established: '2010',
-      status: 'pending',
-      projects: ['Healthcare Initiative', 'Nutrition Program']
     }
   ]);
+
+  useEffect(() => {
+    loadPartners();
+  }, []);
+
+  const loadPartners = async () => {
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/get_partners_api.php');
+      const data = await response.json();
+      if (data.success) {
+        const existingPartners = partners.slice(0, 3); // Keep first 3 mock partners
+        setPartners([...existingPartners, ...data.partners]);
+      }
+    } catch (error) {
+      console.error('Failed to load partners:', error);
+    }
+  };
 
   const stats = [
     {
@@ -156,17 +153,35 @@ export function PartnerNetwork() {
     return matchesSearch && matchesLevel;
   });
 
-  const handleCreatePartner = (partnerData: Omit<Partner, 'id'>) => {
-    const newPartner: Partner = {
-      ...partnerData,
-      id: Date.now().toString()
-    };
-    setPartners([...partners, newPartner]);
-    setShowCreateForm(false);
+  const handleCreatePartner = async (partnerData: Omit<Partner, 'id'>) => {
+    try {
+      const response = await fetch('http://localhost/NGO-India/backend/add_partner_api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(partnerData),
+      });
+      const result = await response.json();
+      if (result.success) {
+        loadPartners();
+        setShowCreateForm(false);
+      }
+    } catch (error) {
+      console.error('Failed to create partner:', error);
+      const newPartner: Partner = {
+        ...partnerData,
+        id: Date.now().toString()
+      };
+      setPartners([...partners, newPartner]);
+      setShowCreateForm(false);
+    }
   };
 
-  const handleUpdatePartner = (updatedPartner: Partner) => {
-    setPartners(partners.map(p => p.id === updatedPartner.id ? updatedPartner : p));
+  const handleUpdatePartner = (partner: Partner | Omit<Partner, 'id'>) => {
+    if ('id' in partner) {
+      setPartners(partners.map(p => p.id === partner.id ? partner as Partner : p));
+    }
     setEditingPartner(null);
   };
 
@@ -191,7 +206,6 @@ export function PartnerNetwork() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -219,7 +233,6 @@ export function PartnerNetwork() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -238,7 +251,6 @@ export function PartnerNetwork() {
         })}
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
         <div className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -263,15 +275,10 @@ export function PartnerNetwork() {
               <option value="national">National</option>
               <option value="international">International</option>
             </select>
-            <button className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Filter className="w-5 h-5" />
-              More Filters
-            </button>
           </div>
         </div>
       </div>
 
-      {/* AI Recommendations */}
       {showRecommendations && (
         <div className="mb-8">
           <PartnerRecommendation 
@@ -285,7 +292,6 @@ export function PartnerNetwork() {
         </div>
       )}
 
-      {/* Partners List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-gray-900">Partners ({filteredPartners.length})</h2>
@@ -373,7 +379,6 @@ export function PartnerNetwork() {
   );
 }
 
-// Partner Form Component
 interface PartnerFormProps {
   partner?: Partner | null;
   onSave: (partner: Partner | Omit<Partner, 'id'>) => void;
@@ -381,24 +386,36 @@ interface PartnerFormProps {
 }
 
 function PartnerForm({ partner, onSave, onCancel }: PartnerFormProps) {
-  const [formData, setFormData] = useState<Omit<Partner, 'id' | 'createdAt' | 'updatedAt'>>({
-    name: partner?.name || '',
-    level: partner?.level || 'local',
-    location: {
-      address: partner?.location?.address || '',
-      country: partner?.location?.country || 'India',
-      region: partner?.location?.region || ''
-    },
-    contact: {
-      email: partner?.contact?.email || '',
-      phone: partner?.contact?.phone || ''
-    },
-    description: partner?.description || '',
-    website: partner?.website || '',
-    established: partner?.established || '',
-    status: partner?.status || 'pending',
-    projects: partner?.projects || []
-  });
+  const [formData, setFormData] = useState<Omit<Partner, 'id'>>(
+    partner ? {
+      name: partner.name,
+      level: partner.level,
+      location: partner.location,
+      contact: partner.contact,
+      description: partner.description,
+      website: partner.website,
+      established: partner.established,
+      status: partner.status,
+      projects: partner.projects
+    } : {
+      name: '',
+      level: 'local',
+      location: {
+        address: '',
+        country: 'India',
+        region: ''
+      },
+      contact: {
+        email: '',
+        phone: ''
+      },
+      description: '',
+      website: '',
+      established: '',
+      status: 'pending',
+      projects: []
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
