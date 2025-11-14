@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { GrantApplicationForm } from '../components/modules/GrantApplicationForm';
-import { GrantApplicationList } from '../components/modules/GrantApplicationList';
-import { GrantApplication, GrantApplicationFormData } from '../types/grantApplication';
-import { useAuth } from '../contexts/AuthContext';
+import { GrantApplicationList } from '../modules/GrantApplication';
+import { GrantApplicationForm } from '../modules/GrantApplicationForm';
+import { GrantApplication, GrantApplicationFormData } from '../../types/grantApplication';
+import { useAuth } from '../../contexts/AuthContext';
 
 type ViewMode = 'list' | 'form' | 'details';
 
@@ -138,17 +138,8 @@ export function GrantApplicationPage() {
   if (viewMode === 'form') {
     return (
       <GrantApplicationForm
-        onBack={handleBack}
         onSubmit={handleSubmitApplication}
-        onRefreshApplications={loadApplications}
-        onMyApplications={() => {
-          window.history.pushState({}, '', '/my-applications');
-          window.dispatchEvent(new PopStateEvent('popstate'));
-        }}
-        onBrowseGrants={() => {
-          window.history.pushState({}, '', '/browse-grants');
-          window.dispatchEvent(new PopStateEvent('popstate'));
-        }}
+        onCancel={() => setViewMode('list')}
       />
     );
   }
