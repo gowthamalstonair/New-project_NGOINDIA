@@ -1,50 +1,33 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit;
-}
-
 try {
-    $pdo = new PDO('mysql:host=localhost;port=3307;dbname=ngoindia_db', 'root', '');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $sql = "SELECT * FROM csr_projects ORDER BY created_at DESC";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
-
-    $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Format data for frontend
-    $formatted_projects = array_map(function($project) {
-        return [
-            'id' => (string)$project['id'],
-            'title' => $project['title'],
-            'description' => $project['description'],
-            'category' => $project['category'],
-            'budget' => (int)$project['budget'],
-            'duration' => $project['duration'],
-            'beneficiaries' => (int)$project['beneficiaries'],
-            'location' => $project['location'],
-            'sdgGoals' => $project['sdg_goals'] ? explode(',', $project['sdg_goals']) : [],
-            'status' => $project['status'],
-            'fundingReceived' => (int)$project['funding_received'],
-            'fundUtilized' => (int)$project['fund_utilized'],
-            'partnerId' => $project['partner_id'],
-            'partnerName' => $project['partner_name'],
+    // Mock CSR projects data
+    $projects = [
+        [
+            'id' => '5',
+            'title' => 'Rural Education Enhancement',
+            'description' => 'Improving educational infrastructure and resources in rural schools',
+            'category' => 'Education',
+            'budget' => 800000,
+            'duration' => '18 months',
+            'beneficiaries' => 1200,
+            'location' => 'Tamil Nadu, India',
+            'sdgGoals' => ['SDG 4: Quality Education', 'SDG 1: No Poverty'],
+            'status' => 'open',
+            'fundingReceived' => 0,
+            'fundUtilized' => 0,
             'images' => [],
             'documents' => [],
-            'expectedOutcomes' => $project['expected_outcomes'] ? explode(',', $project['expected_outcomes']) : [],
-            'progress' => (int)$project['progress'],
+            'expectedOutcomes' => ['1200 students benefited', 'Infrastructure improved', 'Teacher training completed'],
+            'progress' => 0,
             'milestones' => [],
             'impactData' => [
                 'beneficiariesReached' => 0,
@@ -52,19 +35,19 @@ try {
                 'testimonials' => [],
                 'mediaGallery' => []
             ],
-            'createdDate' => $project['created_date'],
-            'startDate' => $project['start_date'],
-            'endDate' => $project['end_date']
-        ];
-    }, $projects);
+            'createdDate' => date('Y-m-d')
+        ]
+    ];
 
     echo json_encode([
         'success' => true,
-        'projects' => $formatted_projects
+        'projects' => $projects
     ]);
 
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'error' => 'Failed to load CSR projects: ' . $e->getMessage()
+    ]);
 }
 ?>

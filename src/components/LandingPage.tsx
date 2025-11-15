@@ -3,7 +3,8 @@ import {
   Heart, Shield, Users, TrendingUp, Award, 
   ArrowRight, Play, CheckCircle, Star,
   Globe, Handshake, Target, BarChart3,
-  Mail, Phone, MapPin, Facebook, Twitter, Instagram
+  Mail, Phone, MapPin, Facebook, Twitter, Instagram,
+  Building2, Send, Eye
 } from 'lucide-react';
 
 import { LoginModal } from './LoginModal';
@@ -116,6 +117,7 @@ export function LandingPage() {
               <a href="#about-ngo" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">About</a>
               <a href="#projects" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Projects</a>
               <a href="#campaigns" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Campaigns</a>
+              <a href="#csr-tools" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">CSR Tools</a>
               <a href="#membership" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Membership</a>
               <a href="#impact" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Impact</a>
               <a href="#contact" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Contact</a>
@@ -660,6 +662,190 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* CSR Tools Section */}
+      <section id="csr-tools" className="py-20 bg-gradient-to-br from-orange-50 to-orange-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">CSR Partnership Hub</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Partner with NGO India for impactful Corporate Social Responsibility initiatives. 
+              Transform communities through strategic CSR investments with complete transparency and measurable outcomes.
+            </p>
+          </div>
+          
+          {/* CSR Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+              <div className="bg-orange-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Users className="w-8 h-8 text-orange-600" />
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">12,500+</div>
+              <div className="text-gray-600">CSR Beneficiaries</div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+              <div className="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Target className="w-8 h-8 text-blue-600" />
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">48</div>
+              <div className="text-gray-600">Projects Completed</div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+              <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-green-600" />
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">15</div>
+              <div className="text-gray-600">Active Partners</div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+              <div className="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <TrendingUp className="w-8 h-8 text-purple-600" />
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">₹3.2Cr</div>
+              <div className="text-gray-600">Funds Utilized</div>
+            </div>
+          </div>
+          
+          {/* CSR Understanding */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">Understanding CSR in India</h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-lg font-semibold text-orange-600 mb-2">✅ What is CSR?</h4>
+                    <p className="text-gray-700">
+                      CSR is a rule in India that makes medium and large companies spend some part of their profit on social good. 
+                      Companies use this money to support NGOs, education, health, environment, rural development, women empowerment, etc.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-orange-600 mb-2">✅ Full Meaning</h4>
+                    <p className="text-gray-700">
+                      <strong>Corporate Social Responsibility (CSR)</strong> - It means companies should take responsibility 
+                      for improving society and the environment.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-orange-600 mb-2">✅ Why CSR Exists?</h4>
+                    <p className="text-gray-700">
+                      To make businesses contribute to the betterment of society and not just earn profit.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">CSR Focus Areas</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="text-2xl mb-2">📚</div>
+                    <h4 className="font-semibold text-gray-900">Education</h4>
+                    <p className="text-sm text-gray-600">Skill development, scholarships, digital classrooms</p>
+                  </div>
+                  <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                    <div className="text-2xl mb-2">👩💼</div>
+                    <h4 className="font-semibold text-gray-900">Women Empowerment</h4>
+                    <p className="text-sm text-gray-600">Self-help groups, skill training, entrepreneurship</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="text-2xl mb-2">🏥</div>
+                    <h4 className="font-semibold text-gray-900">Health & Hygiene</h4>
+                    <p className="text-sm text-gray-600">Medical camps, menstrual health, nutrition support</p>
+                  </div>
+                  <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                    <div className="text-2xl mb-2">🌱</div>
+                    <h4 className="font-semibold text-gray-900">Environment</h4>
+                    <p className="text-sm text-gray-600">Tree plantation, waste management, water conservation</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Featured CSR Project */}
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              <div className="relative h-64 lg:h-auto">
+                <img
+                  src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&dpr=1"
+                  alt="CSR Project"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-4 right-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                  ✓ Completed
+                </div>
+              </div>
+              <div className="p-8">
+                <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium w-fit mb-4">
+                  🏆 Featured CSR Project
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Digital Literacy Program for Rural Youth</h3>
+                <p className="text-orange-600 font-semibold mb-2">Partner: Tech Innovations Ltd</p>
+                <p className="text-gray-600 mb-4">
+                  A CSR-funded digital education project providing computer training, soft skills workshops, and employment support to 650 students.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                  <div>
+                    <div className="text-gray-500">Amount Funded</div>
+                    <div className="font-semibold text-green-600">₹8.5 Lakhs</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Impact</div>
+                    <div className="font-semibold text-blue-600">650 students trained</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Duration</div>
+                    <div className="font-semibold text-purple-600">6 months</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Job Placement</div>
+                    <div className="font-semibold text-orange-600">85% success rate</div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => window.location.href = '/csr-partnership'}
+                    className="bg-orange-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-2"
+                  >
+                    <Eye className="w-5 h-5" />
+                    View Details
+                  </button>
+                  <button className="border border-orange-500 text-orange-600 py-3 px-6 rounded-lg font-semibold hover:bg-orange-50 transition-colors">
+                    Download Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* CTA Section */}
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Partner with Us?</h3>
+            <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+              Join our network of trusted CSR partners and create meaningful impact in communities across India. 
+              Get complete transparency, legal compliance, and measurable outcomes.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => window.location.href = '/csr-partnership'}
+                className="bg-orange-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors inline-flex items-center gap-2"
+              >
+                <Handshake className="w-5 h-5" />
+                Explore CSR Partnership
+              </button>
+              <button
+                onClick={() => window.location.href = '/csr-partnership'}
+                className="border-2 border-orange-500 text-orange-600 px-8 py-4 rounded-lg font-semibold hover:bg-orange-50 transition-colors inline-flex items-center gap-2"
+              >
+                <Send className="w-5 h-5" />
+                Contact for CSR
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Membership Section */}
       <section id="membership" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -936,11 +1122,11 @@ export function LandingPage() {
                 <li><a href="/donate" className="text-gray-400 hover:text-white transition-colors">Donate</a></li>
                 <li><a href="/campaigns" className="text-gray-400 hover:text-white transition-colors">Campaigns</a></li>
                 <li><a href="/joint-projects" className="text-gray-400 hover:text-white transition-colors">Joint Projects</a></li>
+                <li><a href="/csr-tools" className="text-gray-400 hover:text-white transition-colors">CSR Partnership</a></li>
                 <li><a href="/membership" className="text-gray-400 hover:text-white transition-colors">Membership</a></li>
                 <li><a href="/recurring-donations" className="text-gray-400 hover:text-white transition-colors">Recurring Donations</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Volunteer</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Partner with Us</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Corporate CSR</a></li>
               </ul>
             </div>
             

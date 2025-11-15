@@ -35,6 +35,7 @@ import { JoinMembershipPage } from './components/pages/JoinMembershipPage';
 import { PartnerNetworkPage } from './pages/PartnerNetworkPage';
 import { BrowseGrants } from './components/pages/BrowseGrants';
 import { GrantPages } from './components/pages/GrantPages';
+import { CSRLandingPage } from './components/CSRLandingPage';
 
 
 import { AddEmployee } from './components/pages/AddEmployee';
@@ -215,6 +216,10 @@ if (currentPage.startsWith('/grant/matches/')) {
       <GrantPages type="matches" />
     </DashboardProvider>
   );
+}
+
+if (currentPage === '/csr-partnership') {
+  return <CSRLandingPage />;
 }
 
 
