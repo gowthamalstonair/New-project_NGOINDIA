@@ -26,6 +26,25 @@ export function BrowseGrants({ onApplyToGrant }: BrowseGrantsProps) {
   const [applicationStep, setApplicationStep] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [showRequirementsForm, setShowRequirementsForm] = useState(true);
+  const [userRequirements, setUserRequirements] = useState({
+    category: '',
+    minAmount: '',
+    maxAmount: '',
+    location: '',
+    focusArea: '',
+    projectDuration: '',
+    targetBeneficiaries: '',
+    organizationType: '',
+    experienceYears: '',
+    deadline: '',
+    grantStatus: [] as string[],
+    fundingAgency: '',
+    grantPurpose: [] as string[],
+    targetPopulation: [] as string[],
+    matchingFundsRequired: '',
+    keywords: ''
+  });
 
   const mockGrants: Grant[] = [
     { 
@@ -63,7 +82,10 @@ export function BrowseGrants({ onApplyToGrant }: BrowseGrantsProps) {
   const filteredGrants = mockGrants.filter(grant => {
     const matchesSearch = grant.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !categoryFilter || grant.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesUserCategory = !userRequirements.category || grant.category === userRequirements.category;
+    const matchesAmount = (!userRequirements.minAmount || grant.amount >= Number(userRequirements.minAmount)) &&
+                         (!userRequirements.maxAmount || grant.amount <= Number(userRequirements.maxAmount));
+    return matchesSearch && matchesCategory && matchesUserCategory && matchesAmount;
   });
 
   const getStatusColor = (status: string) => {
@@ -99,8 +121,188 @@ export function BrowseGrants({ onApplyToGrant }: BrowseGrantsProps) {
         <p className="text-gray-600">Manage grant applications and funding opportunities</p>
       </div>
 
+      {/* Requirements Form */}
+      {showRequirementsForm && (
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 mb-6">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-t-lg">
+            <h2 className="text-2xl font-bold text-white mb-2">Find Your Perfect Grant</h2>
+            <p className="text-orange-50">Tell us about your requirements to discover matching opportunities</p>
+          </div>
+          
+          <div className="p-8 space-y-8">
+            {/* Section 1: Basic Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                  <select value={userRequirements.category} onChange={(e) => setUserRequirements({...userRequirements, category: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">Select category</option>
+                    <option value="Education">Education</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Environment">Environment</option>
+                    <option value="Infrastructure">Infrastructure</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Focus Area</label>
+                  <input type="text" value={userRequirements.focusArea} onChange={(e) => setUserRequirements({...userRequirements, focusArea: e.target.value})} placeholder="e.g., Rural education" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Keywords / Tags</label>
+                  <input type="text" value={userRequirements.keywords} onChange={(e) => setUserRequirements({...userRequirements, keywords: e.target.value})} placeholder="e.g., capacity building, digital literacy" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location/Region</label>
+                  <input type="text" value={userRequirements.location} onChange={(e) => setUserRequirements({...userRequirements, location: e.target.value})} placeholder="e.g., Maharashtra" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Funding Details */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                Funding Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Min Amount (₹)</label>
+                  <input type="number" value={userRequirements.minAmount} onChange={(e) => setUserRequirements({...userRequirements, minAmount: e.target.value})} placeholder="50,000" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Amount (₹)</label>
+                  <input type="number" value={userRequirements.maxAmount} onChange={(e) => setUserRequirements({...userRequirements, maxAmount: e.target.value})} placeholder="5,00,000" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Funding Agency</label>
+                  <select value={userRequirements.fundingAgency} onChange={(e) => setUserRequirements({...userRequirements, fundingAgency: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">All Sources</option>
+                    <option value="Government">Government</option>
+                    <option value="Corporate CSR">Corporate CSR</option>
+                    <option value="Private Foundation">Private Foundation</option>
+                    <option value="International">International</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Matching Funds</label>
+                  <select value={userRequirements.matchingFundsRequired} onChange={(e) => setUserRequirements({...userRequirements, matchingFundsRequired: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">Any</option>
+                    <option value="no">Not Required</option>
+                    <option value="yes">Required</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Deadline Before</label>
+                  <input type="date" value={userRequirements.deadline} onChange={(e) => setUserRequirements({...userRequirements, deadline: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Grant Status</label>
+                <div className="flex flex-wrap gap-3">
+                  {['Open', 'Upcoming', 'Rolling'].map(status => (
+                    <label key={status} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input type="checkbox" checked={userRequirements.grantStatus.includes(status)} onChange={(e) => { const updated = e.target.checked ? [...userRequirements.grantStatus, status] : userRequirements.grantStatus.filter(s => s !== status); setUserRequirements({...userRequirements, grantStatus: updated}); }} className="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
+                      <span className="text-sm font-medium text-gray-700">{status}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Organization & Project */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                Organization & Project Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Organization Type</label>
+                  <select value={userRequirements.organizationType} onChange={(e) => setUserRequirements({...userRequirements, organizationType: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">Select type</option>
+                    <option value="NGO">NGO</option>
+                    <option value="Trust">Trust</option>
+                    <option value="Society">Society</option>
+                    <option value="Section 8 Company">Section 8 Company</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
+                  <select value={userRequirements.experienceYears} onChange={(e) => setUserRequirements({...userRequirements, experienceYears: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">Select experience</option>
+                    <option value="1">Less than 1 year</option>
+                    <option value="2">1-2 years</option>
+                    <option value="5">3-5 years</option>
+                    <option value="10">5-10 years</option>
+                    <option value="11">10+ years</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Project Duration</label>
+                  <select value={userRequirements.projectDuration} onChange={(e) => setUserRequirements({...userRequirements, projectDuration: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">Select duration</option>
+                    <option value="3">Up to 3 months</option>
+                    <option value="6">Up to 6 months</option>
+                    <option value="12">Up to 1 year</option>
+                    <option value="24">Up to 2 years</option>
+                    <option value="36">3+ years</option>
+                  </select>
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Target Beneficiaries</label>
+                  <input type="number" value={userRequirements.targetBeneficiaries} onChange={(e) => setUserRequirements({...userRequirements, targetBeneficiaries: e.target.value})} placeholder="Number of people to benefit" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: Grant Purpose & Target Population */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                Grant Purpose & Target Groups
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Grant Purpose / Use of Funds</label>
+                  <div className="flex flex-wrap gap-3">
+                    {['Operating Support', 'Capital Expenses', 'Capacity Building', 'Research', 'Event Funding', 'Program Expansion'].map(purpose => (
+                      <label key={purpose} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" checked={userRequirements.grantPurpose.includes(purpose)} onChange={(e) => { const updated = e.target.checked ? [...userRequirements.grantPurpose, purpose] : userRequirements.grantPurpose.filter(p => p !== purpose); setUserRequirements({...userRequirements, grantPurpose: updated}); }} className="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
+                        <span className="text-sm font-medium text-gray-700">{purpose}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Target Population</label>
+                  <div className="flex flex-wrap gap-3">
+                    {['Women', 'Children', 'Tribal', 'Rural', 'Elderly', 'Persons with Disabilities', 'Youth'].map(population => (
+                      <label key={population} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" checked={userRequirements.targetPopulation.includes(population)} onChange={(e) => { const updated = e.target.checked ? [...userRequirements.targetPopulation, population] : userRequirements.targetPopulation.filter(p => p !== population); setUserRequirements({...userRequirements, targetPopulation: updated}); }} className="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
+                        <span className="text-sm font-medium text-gray-700">{population}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 px-8 py-6 rounded-b-lg flex justify-between items-center">
+            <p className="text-sm text-gray-600">All fields are optional except Category</p>
+            <button onClick={() => setShowRequirementsForm(false)} className="px-8 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-semibold shadow-lg hover:shadow-xl transition-all">
+              Find Matching Grants →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Browse Grants */}
-      {!selectedGrant && (
+      {!selectedGrant && !showRequirementsForm && (
         <div>
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-4">

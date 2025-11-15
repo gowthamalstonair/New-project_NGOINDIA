@@ -48,7 +48,7 @@ export function Sidebar({ activeModule, setActiveModule }: SidebarProps) {
       { id: 'partner-network', label: 'Partner Network', icon: Users, available: true },
       { id: 'government', label: 'Government Hub', icon: Shield, available: ['admin', 'executive'].includes(user?.role || '') },
       { id: 'compliance', label: 'Compliance & Legal', icon: Scale, available: ['admin', 'executive'].includes(user?.role || '') },
-      { id: 'grant-applications', label: 'Grant Application', icon: FileCheck, available: true },
+      { id: 'grant-applications', label: 'Grants Application', icon: FileCheck, available: true },
       { id: 'hr', label: 'HR Management', icon: UserCheck, available: user?.role === 'executive' },
       { id: 'reports', label: 'Reports', icon: FileText, available: ['admin', 'executive'].includes(user?.role || '') },
       { id: 'mou-templates', label: 'MOU Templates', icon: BookOpen, available: true },

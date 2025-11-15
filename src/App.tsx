@@ -11,7 +11,7 @@ import { DashboardProvider } from './contexts/DashboardContext';
 import { Chatbot } from './components/Chatbot';
 import { useChatbot } from './hooks/useChatbot';
 import { VolunteerPage } from './components/pages/Volunteer';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';  
+  
 import { WhatsAppChat } from './components/pages/WhatsAppChat';
 import { AddDonation } from './components/pages/AddDonation';
 import { RecordExpense } from './components/pages/RecordExpense';
@@ -35,6 +35,7 @@ import { JoinMembershipPage } from './components/pages/JoinMembershipPage';
 import { PartnerNetworkPage } from './pages/PartnerNetworkPage';
 import { BrowseGrants } from './components/pages/BrowseGrants';
 import { GrantPages } from './components/pages/GrantPages';
+
 
 import { AddEmployee } from './components/pages/AddEmployee';
 import StaffProfile from './components/pages/StaffProfile';
@@ -215,6 +216,7 @@ if (currentPage.startsWith('/grant/matches/')) {
     </DashboardProvider>
   );
 }
+
 
 
   // Loading screen

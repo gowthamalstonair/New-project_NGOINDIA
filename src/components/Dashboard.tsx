@@ -19,7 +19,7 @@ import RegisterNGO from './modules/RegisterNGO';
 import { KnowledgeHub } from './KnowledgeHub';
 import { MOUTemplates } from './modules/MOUTemplates';
 import { PartnerNetwork } from './modules/PartnerNetwork';
-import { GrantApplicationPage } from './pages/GrantApplicationPage';
+import { GrantApplicationModule } from './modules/GrantApplication';
 import { CSRModule } from './modules/CSRModule';
 import { SectorNetworks } from './modules/SectorNetworks';
 
@@ -125,7 +125,7 @@ export function Dashboard() {
       case 'partner-network':
         return <PartnerNetwork />;
       case 'grant-applications':
-        return <GrantApplicationPage />;
+        return <GrantApplicationModule />;
       case 'csr':
         return <CSRModule />;
       case 'sector-networks':

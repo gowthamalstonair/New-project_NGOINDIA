@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
-  FileText, Search, Filter, Calendar, IndianRupee, 
+  FileText, Search, Calendar, IndianRupee, 
   Eye, CheckCircle, XCircle, Clock, Plus
 } from 'lucide-react';
-import { GrantApplication } from '../../types/grantApplication';
+import { GrantApplication, GrantApplicationFormData } from '../../types/grantApplication';
 import { formatNumber } from '../../utils/formatNumber';
+import { GrantApplicationForm } from '../pages/GrantApplicationForm';
 
 interface GrantApplicationListProps {
   applications: GrantApplication[];
@@ -22,8 +23,7 @@ export function GrantApplicationList({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [showDetails, setShowDetails] = useState(false);
-  const [selectedApp, setSelectedApp] = useState<string | null>(null);
+
 
   const getStatusColor = (status: GrantApplication['status']) => {
     switch (status) {
@@ -343,5 +343,27 @@ export function GrantApplicationList({
 
 
     </div>
+  );
+}
+
+export function GrantApplicationModule() {
+  const [showForm, setShowForm] = useState(false);
+
+  const handleSubmit = async (data: GrantApplicationFormData): Promise<boolean> => {
+    console.log('Submitting application:', data);
+    return true;
+  };
+
+  if (showForm) {
+    return <GrantApplicationForm onBack={() => setShowForm(false)} onSubmit={handleSubmit} />;
+  }
+
+  return (
+    <GrantApplicationList
+      applications={[]}
+      onViewDetails={() => {}}
+      onUpdateStatus={() => {}}
+      onNewApplication={() => setShowForm(true)}
+    />
   );
 }
