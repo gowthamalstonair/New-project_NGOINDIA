@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  BookOpen, Search, ExternalLink, Globe, Users,
-  Heart, Award, Target, MapPin, Phone, Mail,
-  Calendar, TrendingUp, Info, Star, ArrowLeft,
+  BookOpen, Search, Users,
+  Target, ArrowLeft, Calendar,
   Download, Eye, Filter, SortAsc, SortDesc, Plus, X, Upload
 } from 'lucide-react';
 import { DocumentViewer } from './DocumentViewer';

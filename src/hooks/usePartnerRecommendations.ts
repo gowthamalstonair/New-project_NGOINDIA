@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Partner, PartnerRecommendation, MatchingCriteria } from '../types/partner';
-import { calculatePartnerMatch, rankPartners } from '../utils/partnerMatching';
+import { rankPartners } from '../utils/partnerMatching';
 
 export const usePartnerRecommendations = (
   partners: Partner[],
@@ -45,7 +45,6 @@ export const usePartnerRecommendations = (
 
   const refreshRecommendations = () => {
     setError(null);
-    // Trigger recalculation by updating a dependency
   };
 
   return {

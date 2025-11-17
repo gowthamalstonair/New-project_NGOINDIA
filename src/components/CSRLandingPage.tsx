@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  Building2, Users, Target, TrendingUp, Award, 
-  ArrowRight, CheckCircle, Star, Download, 
-  Mail, Phone, Globe, MapPin, Calendar,
+  Building2, Users, Target, TrendingUp, 
+  ArrowRight, CheckCircle, Download, 
+  Mail, Phone, MapPin,
   FileText, BarChart3, Handshake, Send,
-  Eye, ExternalLink, Shield, Heart, ArrowLeft
+  Eye, Shield, ArrowLeft
 } from 'lucide-react';
 
 interface CSRPartnerInfo {

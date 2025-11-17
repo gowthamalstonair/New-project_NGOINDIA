@@ -7,18 +7,8 @@ export function useChatbot() {
     setIsOpen(prev => !prev);
   }, []);
 
-  const openChatbot = useCallback(() => {
-    setIsOpen(true);
-  }, []);
-
-  const closeChatbot = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
   return {
     isOpen,
-    toggleChatbot,
-    openChatbot,
-    closeChatbot
+    toggleChatbot
   };
 }

@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 
 import { LoginModal } from './LoginModal';
-import { SignUpModal } from './SignUpModal';
 import { motion } from 'framer-motion';
 import { getCategoryImage } from '../utils/categoryImages';
 

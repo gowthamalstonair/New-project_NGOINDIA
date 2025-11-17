@@ -71,7 +71,6 @@ Both parties maintain confidentiality of proprietary information.
 ${formData.ngoName}: ${formData.ngoSignatory}, ${formData.ngoDesignation}
 ${formData.partnerName}: ${formData.partnerSignatory}, ${formData.partnerDesignation}
       `,
-      
       corporate: `
 CSR PARTNERSHIP MOU
 Between ${formData.partnerName} (Company) and ${formData.ngoName}
@@ -88,7 +87,6 @@ Key Terms:
 Duration: ${formData.duration}
 Signatures: ${formData.ngoSignatory} (NGO), ${formData.partnerSignatory} (Corporate)
       `,
-      
       educational: `
 INTERNSHIP & TRAINING MOU
 Between ${formData.partnerName} (Institution) and ${formData.ngoName}
@@ -105,7 +103,6 @@ Terms:
 Duration: ${formData.duration}
 Signatures: ${formData.ngoSignatory} (NGO), ${formData.partnerSignatory} (Institution)
       `,
-      
       government: `
 GOVERNMENT COLLABORATION MOU
 Between ${formData.partnerName} (Agency) and ${formData.ngoName}
@@ -121,7 +118,6 @@ Compliance:
 Duration: ${formData.duration}
 Signatures: ${formData.ngoSignatory} (NGO), ${formData.partnerSignatory} (Government)
       `,
-      
       ngo: `
 NGO-TO-NGO COLLABORATION MOU
 Between ${formData.ngoName} and ${formData.partnerName}
@@ -137,7 +133,6 @@ Resource Sharing:
 Duration: ${formData.duration}
 Signatures: ${formData.ngoSignatory}, ${formData.partnerSignatory}
       `,
-      
       donor: `
 DONOR PARTNERSHIP MOU
 Between ${formData.partnerName} (Donor) and ${formData.ngoName}
@@ -152,7 +147,6 @@ Funding Terms:
 Duration: ${formData.duration}
 Signatures: ${formData.ngoSignatory} (NGO), ${formData.partnerSignatory} (Donor)
       `,
-      
       short: `
 SHORT-FORM MOU
 Between: ${formData.ngoName} and ${formData.partnerName}

@@ -15,7 +15,7 @@ export const grantApplicationApi = {
   },
 
   // Submit new grant application
-  create: async (applicationData) => {
+  create: async (applicationData: any) => {
     try {
       const response = await fetch(`${API_BASE_URL}/add_grant_application_api.php`, {
         method: 'POST',
@@ -38,7 +38,7 @@ export const grantApplicationApi = {
   },
 
   // Update grant application status (admin only)
-  updateStatus: async (id, status, reviewNotes = '') => {
+  updateStatus: async (id: string, status: string, reviewNotes = '') => {
     try {
       const response = await fetch(`${API_BASE_URL}/update_grant_status_api.php`, {
         method: 'POST',

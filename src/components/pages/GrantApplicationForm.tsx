@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Send, AlertCircle } from 'lucide-react';
 import { GrantApplicationFormData } from '../../types/grantApplication';
+import { grantApplicationApi } from '../../utils/grantApplicationApi';
 
 interface GrantApplicationFormProps {
   onBack: () => void;
@@ -45,14 +46,15 @@ export function GrantApplicationForm({ onBack, onSubmit }: GrantApplicationFormP
 
     setIsSubmitting(true);
     try {
-      const success = await onSubmit(formData);
-      if (success) {
+      const result = await grantApplicationApi.create(formData);
+      if (result.success) {
+        alert('Grant application submitted successfully!');
         onBack();
       } else {
         setError('Failed to submit application. Please try again.');
       }
-    } catch (err) {
-      setError('An error occurred while submitting the application');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred while submitting the application');
     } finally {
       setIsSubmitting(false);
     }

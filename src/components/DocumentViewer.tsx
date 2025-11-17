@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Download, Eye, Calendar, Users, FileText, Share2, Bookmark } from 'lucide-react';
+import { ArrowLeft, Download, Eye, FileText, Share2, Bookmark } from 'lucide-react';
 
 interface DocumentViewerProps {
   documentId: string;

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Building2, Plus, Users, DollarSign, FileText, CheckCircle, Clock, AlertCircle, 
-  Upload, Download, Star, MapPin, Calendar, Target, TrendingUp, Eye, Edit,
-  Send, MessageSquare, Award, BarChart3, PieChart, Filter, Search,
-  Mail, Phone, Globe, Camera, Receipt, FileImage, Handshake
+  MapPin, Calendar, Target, TrendingUp, Eye, Edit,
+  Send, Award, BarChart3, Filter, Search, Handshake
 } from 'lucide-react';
 
 interface CSRProject {
