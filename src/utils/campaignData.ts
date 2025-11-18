@@ -15,7 +15,7 @@ export interface Campaign {
   image: string;
 }
 
-let campaigns: Campaign[] = [
+const campaigns: Campaign[] = [
   {
     id: '1',
     title: 'Education for 1000 Children',

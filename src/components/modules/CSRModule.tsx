@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Building2, Plus, Users, DollarSign, FileText, CheckCircle, Clock, AlertCircle, 
-  MapPin, Calendar, Target, TrendingUp, Eye, Edit,
-  Send, Award, BarChart3, Filter, Search, Handshake
+  MapPin, Calendar, TrendingUp, Eye, Edit,
+  Send, Award, BarChart3, Search, Handshake, Globe
 } from 'lucide-react';
 
 interface CSRProject {
@@ -99,34 +99,9 @@ interface CSRAgreement {
 
 export function CSRModule() {
   const [activeTab, setActiveTab] = useState<'projects' | 'partners' | 'funding' | 'agreements' | 'reports' | 'compliance' | 'public'>('projects');
-  const [showAddProject, setShowAddProject] = useState(false);
-  const [showPartnerRegistration, setShowPartnerRegistration] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<CSRProject | null>(null);
-  const [selectedPartner, setSelectedPartner] = useState<CSRPartner | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showPendingRequests, setShowPendingRequests] = useState(false);
-  const [showPartnerDetails, setShowPartnerDetails] = useState(false);
-  const [showUploadAgreement, setShowUploadAgreement] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportFormData, setReportFormData] = useState({
-    reportType: 'impact' as 'impact' | 'financial' | 'compliance' | 'summary',
-    dateRange: '2024' as string,
-    includeProjects: true,
-    includePartners: true,
-    includeFunding: true,
-    format: 'pdf' as 'pdf' | 'excel' | 'csv'
-  });
-  const [uploadFormData, setUploadFormData] = useState({
-    projectId: '',
-    partnerId: '',
-    type: 'mou' as 'proposal' | 'mou' | 'agreement' | 'contract' | 'nda' | 'amendment' | 'termination' | 'other',
-    customType: '',
-    customProject: '',
-    customPartner: '',
-    file: null as File | null
-  });
 
   const csrProjects: CSRProject[] = [
     {
@@ -553,11 +528,8 @@ export function CSRModule() {
 
   const categories = ['Education', 'Environment', 'Healthcare', 'Women Empowerment', 'Skill Development'];
 
-  const [partners, setPartners] = useState(csrPartners);
-  const [agreements, setAgreements] = useState(csrAgreements);
-  const [projects, setProjects] = useState<CSRProject[]>(csrProjects);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isPartnerLoading, setIsPartnerLoading] = useState(false);
+  const [partners] = useState(csrPartners);
+  const [projects] = useState<CSRProject[]>(csrProjects);
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -566,357 +538,9 @@ export function CSRModule() {
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus;
     return matchesSearch && matchesCategory && matchesStatus;
   });
-  const [formData, setFormData] = useState({
-    companyName: '',
-    contactEmail: '',
-    contactPhone: '',
-    website: '',
-    csrPolicy: '',
-    focusAreas: [] as string[],
-    customFocusArea: ''
-  });
-  const [projectFormData, setProjectFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    customCategory: '',
-    budget: '',
-    duration: '',
-    beneficiaries: '',
-    location: '',
-    sdgGoals: '',
-    expectedOutcomes: ''
-  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
-  const handleFocusAreaChange = (area: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      focusAreas: checked 
-        ? [...prev.focusAreas, area]
-        : prev.focusAreas.filter(a => a !== area)
-    }));
-  };
 
-  const handleCustomFocusAreaAdd = () => {
-    if (formData.customFocusArea.trim() && !formData.focusAreas.includes(formData.customFocusArea.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        focusAreas: [...prev.focusAreas, prev.customFocusArea.trim()],
-        customFocusArea: ''
-      }));
-    }
-  };
-
-  const handleProjectInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setProjectFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSubmitProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const projectCategory = projectFormData.category === 'Other' ? projectFormData.customCategory : projectFormData.category;
-      const projectData = {
-        title: projectFormData.title,
-        description: projectFormData.description,
-        category: projectCategory,
-        budget: parseInt(projectFormData.budget),
-        duration: projectFormData.duration,
-        beneficiaries: parseInt(projectFormData.beneficiaries),
-        location: projectFormData.location,
-        sdgGoals: projectFormData.sdgGoals,
-        expectedOutcomes: projectFormData.expectedOutcomes
-      };
-
-      const response = await fetch('http://localhost/NGO-India/backend/add_csr_project_api.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Create frontend project object
-        const newProject: CSRProject = {
-          id: result.project_id.toString(),
-          title: projectFormData.title,
-          description: projectFormData.description,
-          category: projectCategory,
-          budget: parseInt(projectFormData.budget),
-          duration: projectFormData.duration,
-          beneficiaries: parseInt(projectFormData.beneficiaries),
-          location: projectFormData.location,
-          sdgGoals: projectFormData.sdgGoals.split(',').map(s => s.trim()),
-          status: 'open',
-          fundingReceived: 0,
-          fundUtilized: 0,
-          images: [],
-          documents: [],
-          expectedOutcomes: projectFormData.expectedOutcomes.split(',').map(s => s.trim()),
-          progress: 0,
-          milestones: [],
-          impactData: {
-            beneficiariesReached: 0,
-            sdgsAchieved: [],
-            testimonials: [],
-            mediaGallery: []
-          },
-          createdDate: new Date().toISOString().split('T')[0]
-        };
-
-        setProjects(prev => [newProject, ...prev]);
-        setProjectFormData({ title: '', description: '', category: '', customCategory: '', budget: '', duration: '', beneficiaries: '', location: '', sdgGoals: '', expectedOutcomes: '' });
-        setShowAddProject(false);
-        alert('Project created successfully!');
-      } else {
-        alert('Error: ' + result.error);
-      }
-    } catch (error) {
-      console.error('Error adding project:', error);
-      alert('Failed to add project. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmitRegistration = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsPartnerLoading(true);
-    
-    try {
-      const partnerData = {
-        companyName: formData.companyName,
-        contactEmail: formData.contactEmail,
-        contactPhone: formData.contactPhone,
-        website: formData.website,
-        csrPolicy: formData.csrPolicy,
-        focusAreas: formData.focusAreas
-      };
-
-      const response = await fetch('http://localhost/NGO-India/backend/add_csr_partner_api.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(partnerData)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Create frontend partner object
-        const newPartner: CSRPartner = {
-          id: result.partner_id.toString(),
-          companyName: formData.companyName,
-          contactEmail: formData.contactEmail,
-          contactPhone: formData.contactPhone,
-          website: formData.website,
-          focusAreas: formData.focusAreas,
-          status: 'pending',
-          registrationDate: new Date().toISOString().split('T')[0],
-          csrPolicy: formData.csrPolicy,
-          rating: 0,
-          totalFunding: 0,
-          activeProjects: 0,
-          completedProjects: 0
-        };
-
-        setPartners(prev => [newPartner, ...prev]);
-        setFormData({ companyName: '', contactEmail: '', contactPhone: '', website: '', csrPolicy: '', focusAreas: [], customFocusArea: '' });
-        setShowPartnerRegistration(false);
-        alert('Registration submitted successfully! Awaiting admin approval.');
-      } else {
-        alert('Error: ' + result.error);
-      }
-    } catch (error) {
-      console.error('Error submitting registration:', error);
-      alert('Failed to submit registration. Please try again.');
-    } finally {
-      setIsPartnerLoading(false);
-    }
-  };
-
-  const approvePartner = (partnerId: string) => {
-    setPartners(prev => prev.map(partner => 
-      partner.id === partnerId 
-        ? { ...partner, status: 'active' as const }
-        : partner
-    ));
-    alert('Partner approved successfully!');
-  };
-
-  const rejectPartner = (partnerId: string) => {
-    setPartners(prev => prev.filter(partner => partner.id !== partnerId));
-    alert('Partner registration rejected.');
-  };
-
-  const handleUploadInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setUploadFormData(prev => ({ 
-      ...prev, 
-      [name]: value,
-      ...(name === 'type' && value !== 'other' ? { customType: '' } : {}),
-      ...(name === 'projectId' && value !== 'other' ? { customProject: '' } : {}),
-      ...(name === 'partnerId' && value !== 'other' ? { customPartner: '' } : {})
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setUploadFormData(prev => ({ ...prev, file }));
-  };
-
-  const handleUploadAgreement = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!uploadFormData.file) {
-      alert('Please select a file to upload.');
-      return;
-    }
-    if (uploadFormData.type === 'other' && !uploadFormData.customType.trim()) {
-      alert('Please enter a custom agreement type.');
-      return;
-    }
-    if (uploadFormData.projectId === 'other' && !uploadFormData.customProject.trim()) {
-      alert('Please enter a custom project name.');
-      return;
-    }
-    if (uploadFormData.partnerId === 'other' && !uploadFormData.customPartner.trim()) {
-      alert('Please enter a custom partner name.');
-      return;
-    }
-
-    const agreementType = uploadFormData.type === 'other' ? uploadFormData.customType : uploadFormData.type;
-    const projectId = uploadFormData.projectId === 'other' ? 'custom-' + Date.now() : uploadFormData.projectId;
-    const partnerId = uploadFormData.partnerId === 'other' ? 'custom-' + Date.now() : uploadFormData.partnerId;
-    
-    const newAgreement: CSRAgreement = {
-      id: Date.now().toString(),
-      projectId: projectId,
-      partnerId: partnerId,
-      type: agreementType as any,
-      document: uploadFormData.file.name,
-      status: 'draft',
-      createdDate: new Date().toISOString().split('T')[0],
-      ...(uploadFormData.projectId === 'other' && { customProjectName: uploadFormData.customProject }),
-      ...(uploadFormData.partnerId === 'other' && { customPartnerName: uploadFormData.customPartner })
-    };
-
-    setAgreements(prev => [...prev, newAgreement]);
-    setUploadFormData({ projectId: '', partnerId: '', type: 'mou', customType: '', customProject: '', customPartner: '', file: null });
-    setShowUploadAgreement(false);
-    alert('Agreement uploaded successfully!');
-  };
-
-  const pendingPartners = partners.filter(p => p.status === 'pending');
-  const pendingCount = pendingPartners.length;
-
-  const handleReportInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setReportFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
-  };
-
-  const loadProjects = async () => {
-    try {
-      const response = await fetch('http://localhost/NGO-India/backend/get_csr_projects_api.php');
-      const result = await response.json();
-      
-      if (result.success) {
-        // Combine existing mock data with database data
-        const combinedProjects = [...csrProjects, ...result.projects];
-        setProjects(combinedProjects);
-      }
-    } catch (error) {
-      console.error('Error loading projects:', error);
-      // Keep existing mock data if API fails
-      setProjects(csrProjects);
-    }
-  };
-
-  const loadPartners = async () => {
-    try {
-      const response = await fetch('http://localhost/NGO-India/backend/get_csr_partners_api.php');
-      const result = await response.json();
-      
-      if (result.success) {
-        // Combine existing mock data with database data
-        const combinedPartners = [...csrPartners, ...result.partners];
-        setPartners(combinedPartners);
-      }
-    } catch (error) {
-      console.error('Error loading partners:', error);
-      // Keep existing mock data if API fails
-      setPartners(csrPartners);
-    }
-  };
-
-  React.useEffect(() => {
-    loadProjects();
-    loadPartners();
-  }, []);
-
-  const generateReport = () => {
-    const reportData = {
-      title: `CSR ${reportFormData.reportType.charAt(0).toUpperCase() + reportFormData.reportType.slice(1)} Report`,
-      generatedDate: new Date().toLocaleDateString(),
-      dateRange: reportFormData.dateRange,
-      summary: {
-        totalProjects: projects.length,
-        activeProjects: projects.filter(p => p.status === 'active').length,
-        completedProjects: projects.filter(p => p.status === 'completed').length,
-        totalFunding: projects.reduce((sum, p) => sum + p.fundingReceived, 0),
-        totalBeneficiaries: projects.reduce((sum, p) => sum + p.impactData.beneficiariesReached, 0),
-        activePartners: partners.filter(p => p.status === 'active').length
-      },
-      projects: reportFormData.includeProjects ? projects : [],
-      partners: reportFormData.includePartners ? partners.filter(p => p.status === 'active') : [],
-      funding: reportFormData.includeFunding ? fundTransactions : []
-    };
-
-    const reportContent = `
-# ${reportData.title}
-
-**Generated:** ${reportData.generatedDate}
-**Period:** ${reportData.dateRange}
-
-## Executive Summary
-- Total Projects: ${reportData.summary.totalProjects}
-- Active Projects: ${reportData.summary.activeProjects}
-- Completed Projects: ${reportData.summary.completedProjects}
-- Total Funding: ₹${reportData.summary.totalFunding.toLocaleString()}
-- Lives Impacted: ${reportData.summary.totalBeneficiaries.toLocaleString()}
-- Active Partners: ${reportData.summary.activePartners}
-
-${reportFormData.includeProjects ? `## Projects\n${reportData.projects.map(p => `### ${p.title}\n- Category: ${p.category}\n- Budget: ₹${p.budget.toLocaleString()}\n- Status: ${p.status}\n- Beneficiaries: ${p.beneficiaries.toLocaleString()}\n- Progress: ${p.progress}%\n`).join('\n')}` : ''}
-
-${reportFormData.includePartners ? `## Partners\n${reportData.partners.map(p => `### ${p.companyName}\n- Focus Areas: ${p.focusAreas.join(', ')}\n- Total Funding: ₹${p.totalFunding.toLocaleString()}\n- Active Projects: ${p.activeProjects}\n`).join('\n')}` : ''}
-
-${reportFormData.includeFunding ? `## Financial Summary\n- Total Received: ₹${reportData.funding.filter(t => t.type === 'received').reduce((sum, t) => sum + t.amount, 0).toLocaleString()}\n- Total Utilized: ₹${reportData.funding.filter(t => t.type === 'utilized').reduce((sum, t) => sum + t.amount, 0).toLocaleString()}\n` : ''}
-    `;
-
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `CSR-${reportFormData.reportType}-Report-${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    setShowReportModal(false);
-    alert('Report generated and downloaded successfully!');
-  };
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
@@ -1012,7 +636,6 @@ ${reportFormData.includeFunding ? `## Financial Summary\n- Total Received: ₹${
                 </select>
                 
                 <button
-                  onClick={() => setShowAddProject(true)}
                   className="bg-orange-500 text-white px-3 py-1.5 text-sm rounded-md hover:bg-orange-600 transition flex items-center gap-1 whitespace-nowrap"
                 >
                   <Plus className="w-4 h-4" />
@@ -1096,7 +719,6 @@ ${reportFormData.includeFunding ? `## Financial Summary\n- Total Received: ₹${
                       
                       <div className="flex gap-2">
                         <button
-                          onClick={() => setSelectedProject(project)}
                           className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition"
                           title="View Details"
                         >

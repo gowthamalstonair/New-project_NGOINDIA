@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, AlertTriangle, CheckCircle, Calendar, FileText, Plus } from 'lucide-react';
 import { Donation, FcraRegistration } from '../../types/donation';
 import { exportDonationsCsv } from '../../utils/exports';
-import { FcraDonationForm } from '../FcraDonationForm';
+import { FcraDonationForm } from '../pages/FcraDonationForm';
 import api from '../../utils/api';
 
 export function FcraCompliancePage() {
@@ -32,7 +32,12 @@ export function FcraCompliancePage() {
   const loadDonations = async () => {
     try {
       const response = await api.getDonations();
-      const fcraDonations = response.results || [];
+      const fcraDonations = (response.results || []).map(donation => ({
+        ...donation,
+        id: donation.id || Date.now().toString(),
+        status: donation.status || 'completed' as const,
+        type: donation.type || 'one-time' as const
+      }));
       
       setDonations(fcraDonations);
     } catch (error) {

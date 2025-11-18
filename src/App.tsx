@@ -30,7 +30,7 @@ import { PartnerOrganizationsPage } from './components/pages/PartnerOrganization
 import { MembershipPage } from './components/pages/MembershipPage';
 import { MembershipDashboard } from './components/pages/MembershipDashboard';
 import { JoinMembershipPage } from './components/pages/JoinMembershipPage';
-import { PartnerNetworkPage } from './pages/PartnerNetworkPage';
+import { PartnerNetwork } from './components/modules/PartnerNetwork';
 import { BrowseGrants } from './components/pages/BrowseGrants';
 import { GrantPages } from './components/pages/GrantPages';
 import { CSRLandingPage } from './components/CSRLandingPage';
@@ -189,7 +189,7 @@ if (currentPage === '/performance-review-details') {
   return <PerformanceReviewDetails />;
 }
 if (currentPage === '/partner-network') {
-  return <PartnerNetworkPage />;
+  return <PartnerNetwork />;
 }
 
 if (currentPage === '/browse-grants') {

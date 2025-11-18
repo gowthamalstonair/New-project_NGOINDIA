@@ -1,11 +1,11 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState } from 'react';
 import { 
   Settings as SettingsIcon, User, Bell, Shield, Palette, 
-  Globe, Database, Mail, Phone, MapPin, Save,
+  Save,
   Eye, EyeOff, Camera, Upload, Download, Trash2,
-  Key, Lock, Smartphone, Monitor, Moon, Sun,
-  ChevronRight, Check, ExternalLink, HelpCircle,
-  CreditCard, Users, FileText, Building
+  Lock, Smartphone, Monitor, Moon, Sun,
+  ChevronRight, Check, HelpCircle,
+  Users, FileText, Building
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useScrollReset } from '../../hooks/useScrollReset';
@@ -203,27 +203,7 @@ export function Settings() {
     focusAreas: ['Education', 'Healthcare', 'Women Empowerment', 'Rural Development']
   });
 
-  const handleSave = async (section: string) => {
-    setIsSaving(true);
-    
-    if (section === 'profile') {
-      // Update the auth context user data when profile is saved
-      updateUser({
-        name: profileData.name,
-        email: profileData.email,
-        phone: profileData.phone,
-        address: profileData.address,
-        organization: profileData.organization,
-        position: profileData.position,
-        profileImage: profileData.profileImage
-      });
-    }
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    console.log(`${section} saved`);
-  };
+
 
   const handleNotificationChange = (key: keyof Notifications, value: boolean) => {
     setNotifications(prev => ({ ...prev, [key]: value }));

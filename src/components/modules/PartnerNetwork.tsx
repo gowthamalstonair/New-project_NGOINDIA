@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useScrollReset } from '../../hooks/useScrollReset';
 import { formatNumber } from '../../utils/formatNumber';
 import { Partner } from '../../types/partner';
-import { PartnerRecommendation } from './PartnerRecommendation';
+import { PartnerRecommendation } from '../pages/PartnerRecommendation';
 
 export function PartnerNetwork() {
   useScrollReset();

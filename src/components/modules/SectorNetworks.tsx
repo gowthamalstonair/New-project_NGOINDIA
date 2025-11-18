@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Network, Users, MessageSquare, FileText, 
+  Users, MessageSquare, FileText, 
   TrendingUp, Search, Plus, BookOpen, 
-  Handshake, Target, BarChart3, Download,
-  Upload, Star, Eye, ThumbsUp, Reply, Send, User,
-  Clock, Pin, Globe, ArrowUp, ArrowRight, CheckCircle, X,
-  Zap, HelpCircle, UserCheck, MessageCircle, AlertCircle
+  Handshake, Target, BarChart3,
+  ThumbsUp, Reply, User,
+  Pin, Globe, ArrowUp, ArrowRight, CheckCircle, X,
+  Zap, HelpCircle, UserCheck, MessageCircle
 } from 'lucide-react';
 
 
@@ -178,7 +178,6 @@ export function SectorNetworks() {
   const [activeView, setActiveView] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewPost, setShowNewPost] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const [sectorDiscussions, setSectorDiscussions] = useState<any[]>([]);
   const [quickInteractions, setQuickInteractions] = useState<any[]>([]);
@@ -189,28 +188,13 @@ export function SectorNetworks() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joiningsector, setJoiningSector] = useState<string | null>(null);
   const [showNewSectorModal, setShowNewSectorModal] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [previewResource, setPreviewResource] = useState<any>(null);
-  const [userRatings, setUserRatings] = useState<Record<string, number>>({});
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [selectedDiscussion, setSelectedDiscussion] = useState<any>(null);
   const [selectedInteractionDetail, setSelectedInteractionDetail] = useState<any>(null);
 
 
   const [discussionReplies, setDiscussionReplies] = useState<DiscussionReplies>(initialRepliesData);
-  const [joinFormData, setJoinFormData] = useState({
-    ngoName: '',
-    email: '',
-    phone: '',
-    location: '',
-    focusArea: '',
-    description: '',
-    website: '',
-    members: 0,
-    projects: 0,
-    role: ''
-  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [sectorNetworks, setSectorNetworks] = useState<any[]>([]);
@@ -479,25 +463,7 @@ export function SectorNetworks() {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
 
-  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
-
-  const handlePreview = (resource: any) => {
-    setPreviewResource(resource);
-    setShowPreviewModal(true);
-  };
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -520,10 +486,7 @@ export function SectorNetworks() {
             ].map(tab => (
               <button 
                 key={tab.id}
-                onClick={() => {
-                  console.log('Tab clicked:', tab.id);
-                  setActiveView(tab.id);
-                }}
+                onClick={() => setActiveView(tab.id)}
                 className={`px-6 py-3 rounded-lg text-sm font-medium transition-all ${
                   activeView === tab.id 
                     ? 'bg-orange-500 text-white shadow-md' 
@@ -780,7 +743,6 @@ export function SectorNetworks() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('Join Network clicked for sector:', sector.id);
                         setJoiningSector(sector.id);
                         setShowJoinModal(true);
                       }}
@@ -1823,7 +1785,6 @@ export function SectorNetworks() {
       )}
 
       {/* Join Network Modal */}
-      {console.log('Modal state:', { showJoinModal, joiningsector })}
       {showJoinModal && joiningsector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl p-8 w-full max-w-2xl mx-4 my-8 max-h-[90vh] overflow-y-auto relative">

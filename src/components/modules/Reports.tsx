@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { 
-  FileText, Download, Calendar, Filter, TrendingUp, 
-  IndianRupee, Users, Target, BarChart3, PieChart,
-  Eye, Share2, Mail, Printer, RefreshCw, Clock
+  FileText, Download, TrendingUp, 
+  IndianRupee, Users, Target, BarChart3,
+  Eye, Share2, Mail, Printer, RefreshCw
 } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis, PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, Area, AreaChart, Legend } from 'recharts';
+import { Bar, BarChart, Tooltip, XAxis, YAxis, PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, Area, AreaChart, Legend } from 'recharts';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useScrollReset } from '../../hooks/useScrollReset';
 import { formatNumber } from '../../utils/formatNumber';
@@ -314,7 +314,7 @@ export function Reports() {
                   cy="50%"
                   outerRadius={80}
                 >
-                  {expenseDistribution.map((entry, index) => (
+                  {expenseDistribution.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={categoryColors[index % categoryColors.length]} />
                   ))}
                 </Pie>

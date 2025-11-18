@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Upload, X } from 'lucide-react';
-import { Donation } from '../types/donation';
-import { convertToINR } from '../utils/fcraHelpers';
-import { useAuth } from '../contexts/AuthContext';
-import { useDashboard } from '../contexts/DashboardContext';
+import { Donation } from '../../types/donation';
+import { convertToINR } from '../../utils/fcraHelpers';
+import { useAuth } from '../../contexts/AuthContext';
+import { useDashboard } from '../../contexts/DashboardContext';
 // @ts-ignore
-import api from '../utils/api';
+import api from '../../utils/api';
 
 interface FcraDonationFormProps {
   onBack?: () => void;
@@ -39,7 +39,7 @@ export function FcraDonationForm({ onBack, editingDonation }: FcraDonationFormPr
       ? convertToINR(parseFloat(formData.amount), formData.currency, parseFloat(formData.conversionRate))
       : parseFloat(formData.amount);
 
-    const donationData: Partial<Donation> = {
+    const donationData = {
       donorName: formData.donorName,
       donorCountry: formData.isForeign ? formData.donorCountry : undefined,
       isForeign: formData.isForeign,

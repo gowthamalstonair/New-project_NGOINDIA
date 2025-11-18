@@ -4,7 +4,7 @@ import { AdminDashboard } from './dashboards/AdminDashboard';
 import { LeadershipDashboard } from './dashboards/ExecutiveDashboard';
 import { EmployeeDashboard } from './dashboards/EmployeeDashboard';
 import { DonorManagement } from './modules/DonorManagement';
-import { FinancialTracking } from './modules/FinancialTracking';
+import { FinancialTracking } from './pages/FinancialTracking';
 import { ProjectMonitoring } from './modules/ProjectMonitoring';
 import { CollaborationHub } from './modules/CollaborationHub';
 import { GovernmentHub } from './modules/GovernmentHub';
@@ -12,7 +12,7 @@ import { HRManagement } from './modules/HRManagement';
 import { Settings } from './modules/Settings';
 import { Reports } from './modules/Reports';
 import { BeneficiaryImpactTracking } from './modules/BeneficiaryImpactTracking';
-import { FcraCompliance } from './modules/FcraCompliance';
+import { FcraCompliancePage } from './modules/FcraCompliancePage';
 import { ComplianceModule } from './modules/ComplianceModule';
 import { useAuth } from '../contexts/AuthContext';
 import RegisterNGO from './modules/RegisterNGO';
@@ -101,7 +101,7 @@ export function Dashboard() {
       case 'beneficiaryImpact':
         return <BeneficiaryImpactTracking />;
       case 'fcraCompliance':
-        return <FcraCompliance />;
+        return <FcraCompliancePage />;
       case 'collaboration':
         return <CollaborationHub />;
       case 'government':

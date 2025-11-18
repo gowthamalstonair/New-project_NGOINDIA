@@ -293,7 +293,7 @@ export function ComplianceModule() {
     // AI analysis based on filename
     const fileName = file.name.toLowerCase();
     let detectedCategory = '';
-    let confidence = 95;
+    const confidence = 95;
     let status: 'compliant' | 'needs-review' | 'non-compliant' = 'compliant';
     let extractedText = '';
     let vendor = '';
